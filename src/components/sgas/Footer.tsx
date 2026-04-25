@@ -41,7 +41,7 @@ export default function Footer() {
               {[
                 { href: "#home", en: "Home", ar: "الرئيسية" },
                 { href: "#about", en: "About SGAS", ar: "عن SGAS" },
-                { href: "#materials", en: "Study Materials", ar: "المواد العلمية" },
+                { href: "#team", en: "Our Team", ar: "فريقنا" },
                 { href: "#events", en: "Events", ar: "الفعاليات" },
                 { href: "#join", en: "Join Us", ar: "انضم لينا" },
               ].map((link) => (
@@ -113,7 +113,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://chat.whatsapp.com/GFwGss82nOQKnsHn6l88vE"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-brand-300 hover:text-white transition-colors text-sm"

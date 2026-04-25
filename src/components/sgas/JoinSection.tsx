@@ -71,7 +71,7 @@ export default function JoinSection() {
 
           {/* WhatsApp */}
           <a
-            href="#"
+            href="https://chat.whatsapp.com/GFwGss82nOQKnsHn6l88vE"
             target="_blank"
             rel="noopener noreferrer"
             className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-green-200 shadow-sm hover:shadow-xl hover:shadow-green-500/10 transition-all duration-500 text-center"
@@ -119,7 +119,7 @@ export default function JoinSection() {
                 className="bg-white text-brand-800 hover:bg-brand-50 px-8 py-6 rounded-xl font-bold shadow-lg transition-all duration-300"
               >
                 <MessageCircle className="me-2 h-5 w-5" />
-                {j.ctaWhatsApp[lang]}
+                <a href="https://chat.whatsapp.com/GFwGss82nOQKnsHn6l88vE" target="_blank" rel="noopener noreferrer" className="text-inherit no-underline">{j.ctaWhatsApp[lang]}</a>
               </Button>
               <Button
                 size="lg"

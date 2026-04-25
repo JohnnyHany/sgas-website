@@ -45,8 +45,7 @@ export default function HeroSection() {
 
         {/* Main Title */}
         <h1 className="animate-fade-in-up-delay-1 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6">
-          <span className="text-white">SG</span>
-          <span className="gradient-text">AS</span>
+          <span className="text-white">SGAS</span>
         </h1>
 
         {/* Subtitle */}
@@ -68,9 +67,8 @@ export default function HeroSection() {
             size="lg"
             className="bg-[#B22222] hover:bg-[#961d1d] text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-[#B22222]/30 hover:shadow-[#B22222]/40 transition-all duration-300"
           >
-            <a href="#materials">
-              <BookOpen className="me-2 h-5 w-5" />
-              {hero.ctaMaterials[lang]}
+            <a href="#join">
+              {hero.ctaAbout[lang]}
             </a>
           </Button>
           <Button
