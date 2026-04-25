@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const admins = getAdminsData();
+    const admins = await getAdminsData();
     const admin = admins[normalizedEmail];
 
     if (!admin) {
