@@ -69,7 +69,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2 text-brand-300 text-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-brand-400" />
-                {lang === "en" ? "Ain Shams University" : "جامعة عين شمس"} - {lang === "en" ? "Faculty of Commerce" : "كلية التجارة"}
+                {lang === "en" ? "Ain Shams University" : "جامعة عين شمس"} - {lang === "en" ? "Faculty of Science" : "كلية العلوم"}
               </li>
             </ul>
           </div>

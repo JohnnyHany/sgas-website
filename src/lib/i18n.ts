@@ -93,13 +93,13 @@ const translations = {
     cairoTag1: { en: "Home Base", ar: "الجامعة الأم" },
     cairoTag2: { en: "Faculty of Commerce", ar: "كلية التجارة" },
     ainShamsTitle: { en: "Ain Shams University", ar: "جامعة عين شمس" },
-    ainShamsSubtitle: { en: "Ain Shams University", ar: "جامعة عين شمس" },
+    ainShamsSubtitle: { en: "Faculty of Science - Girls' Campus", ar: "كلية العلوم - جامعة البنات" },
     ainShamsDesc: {
-      en: "Our first step towards expansion! We added Ain Shams University to our network to broaden our impact and enable more actuarial science students to benefit from our services and resources. We always welcome collaboration with new faculties and universities.",
-      ar: "خطوتنا الأولى نحو التوسع! أضفنا جامعة عين شمس لشبكتنا لتوسيع نطاق التأثير وتمكين المزيد من طلاب العلوم الاكتوارية من الاستفادة من خدماتنا ومواردنا. نحن نرحب دائماً بالتعاون مع كليات جديدة وجامعات إضافية.",
+      en: "Our first step towards expansion! We added Ain Shams University - Faculty of Science (Girls' Campus), Department of Mathematics and Actuarial Science - to our network to broaden our impact and enable more actuarial science students to benefit from our services and resources. We always welcome collaboration with new faculties and universities.",
+      ar: "خطوتنا الأولى نحو التوسع! أضفنا جامعة عين شمس - كلية العلوم (حرم البنات)، قسم الرياضيات والعلوم الاكتوارية - لشبكتنا لتوسيع نطاق التأثير وتمكين المزيد من طلاب العلوم الاكتوارية من الاستفادة من خدماتنا ومواردنا. نحن نرحب دائماً بالتعاون مع كليات جديدة وجامعات إضافية.",
     },
     ainShamsTag1: { en: "Recent Expansion", ar: "امتداد حديث" },
-    ainShamsTag2: { en: "Faculty of Commerce", ar: "كلية التجارة" },
+    ainShamsTag2: { en: "Faculty of Science", ar: "كلية العلوم" },
     expansion: {
       en: "We're expanding! Is your university next? Contact us",
       ar: "نسعى للتوسع! هل جامعتك التالية؟ تواصل معنا",
