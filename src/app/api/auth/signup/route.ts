@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if already registered
-    const admins = getAdminsData();
+    const admins = await getAdminsData();
     if (admins[normalizedEmail]) {
       return NextResponse.json(
         { error: 'This email is already registered. Please login instead.' },
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const name = ADMIN_NAMES[normalizedEmail] || normalizedEmail;
 
     admins[normalizedEmail] = { passwordHash, name };
-    saveAdminsData(admins);
+    await saveAdminsData(admins);
 
     // Create session token (remember by default on signup)
     const token = await createToken(normalizedEmail, true);
