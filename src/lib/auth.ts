@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 // ===== Allowed Admin Emails (Whitelist) =====
 export const ALLOWED_ADMINS = [
@@ -58,43 +59,73 @@ export function isAllowedAdmin(email: string): boolean {
   return ALLOWED_ADMINS.includes(email.toLowerCase().trim());
 }
 
+// ===== Data Directory (uses /tmp on Vercel for write access) =====
+function getDataDir(): string {
+  // Vercel serverless allows writing to /tmp
+  const tmpDir = '/tmp/sgas-data';
+  if (!fs.existsSync(tmpDir)) {
+    fs.mkdirSync(tmpDir, { recursive: true });
+  }
+  return tmpDir;
+}
+
 // ===== Admin Data Store (JSON file) =====
 export interface AdminData {
   passwordHash: string;
   name: string;
 }
 
-const ADMINS_FILE = path.join(process.cwd(), 'data', 'admins.json');
-
 export function getAdminsData(): Record<string, AdminData> {
   try {
-    const data = fs.readFileSync(ADMINS_FILE, 'utf-8');
-    return JSON.parse(data);
+    const dir = getDataDir();
+    const filePath = path.join(dir, 'admins.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(data);
+    }
+    // First time: copy from project data/ if available
+    const projectFile = path.join(process.cwd(), 'data', 'admins.json');
+    if (fs.existsSync(projectFile)) {
+      const data = fs.readFileSync(projectFile, 'utf-8');
+      const parsed = JSON.parse(data);
+      fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2));
+      return parsed;
+    }
+    return {};
   } catch {
     return {};
   }
 }
 
 export function saveAdminsData(data: Record<string, AdminData>): void {
-  const dir = path.dirname(ADMINS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(ADMINS_FILE, JSON.stringify(data, null, 2));
+  const dir = getDataDir();
+  fs.writeFileSync(path.join(dir, 'admins.json'), JSON.stringify(data, null, 2));
 }
 
 // ===== Events Data Store (JSON file) =====
-const EVENTS_FILE = path.join(process.cwd(), 'data', 'events.json');
-
 export function getEventsData(): any[] {
   try {
-    const data = fs.readFileSync(EVENTS_FILE, 'utf-8');
-    return JSON.parse(data);
+    const dir = getDataDir();
+    const filePath = path.join(dir, 'events.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(data);
+    }
+    // First time: copy from project data/ if available
+    const projectFile = path.join(process.cwd(), 'data', 'events.json');
+    if (fs.existsSync(projectFile)) {
+      const data = fs.readFileSync(projectFile, 'utf-8');
+      const parsed = JSON.parse(data);
+      fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2));
+      return parsed;
+    }
+    return [];
   } catch {
     return [];
   }
 }
 
 export function saveEventsData(events: any[]): void {
-  const dir = path.dirname(EVENTS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2));
+  const dir = getDataDir();
+  fs.writeFileSync(path.join(dir, 'events.json'), JSON.stringify(events, null, 2));
 }
