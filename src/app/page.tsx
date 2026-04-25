@@ -2,7 +2,7 @@ import Navbar from "@/components/sgas/Navbar";
 import HeroSection from "@/components/sgas/HeroSection";
 import AboutSection from "@/components/sgas/AboutSection";
 import UniversitiesSection from "@/components/sgas/UniversitiesSection";
-import MaterialsSection from "@/components/sgas/MaterialsSection";
+import TeamSection from "@/components/sgas/TeamSection";
 import EventsSection from "@/components/sgas/EventsSection";
 import JoinSection from "@/components/sgas/JoinSection";
 import Footer from "@/components/sgas/Footer";
@@ -15,7 +15,7 @@ export default function Home() {
         <HeroSection />
         <AboutSection />
         <UniversitiesSection />
-        <MaterialsSection />
+        <TeamSection />
         <EventsSection />
         <JoinSection />
       </main>
