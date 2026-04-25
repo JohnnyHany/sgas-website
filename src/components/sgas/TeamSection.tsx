@@ -76,6 +76,7 @@ const teamMembers: TeamMember[] = [
     university: "cairo",
     image: "/team-shahd.png",
     icon: Users,
+    email: "shahd.abdelsalam1326@gmail.com",
   },
   {
     nameEn: "Ebrahim Aymn",
@@ -110,6 +111,7 @@ const teamMembers: TeamMember[] = [
     bioAr: "سفيرة SGAS الرسمية في جامعة عين شمس. مسؤولة عن تمثيل SGAS وتنسيق الأنشطة وتوسيع المجتمع في جامعة عين شمس.",
     university: "ainshams",
     icon: Star,
+    email: "salmamahmoud7454@gmail.com",
   },
 ];
 
@@ -140,7 +142,8 @@ function MemberModal({ member, lang, onClose }: { member: TeamMember; lang: "en"
                 alt={member.nameEn}
                 fill
                 sizes="112px"
-                className="rounded-full object-cover"
+                className="rounded-full object-cover object-top"
+                style={{ objectPosition: 'center 15%' }}
               />
             ) : (
               <div className="w-full h-full rounded-full bg-brand-100 flex items-center justify-center shadow-lg">
@@ -244,7 +247,8 @@ export default function TeamSection() {
                       alt={member.nameEn}
                       fill
                       sizes="96px"
-                      className="rounded-full object-cover"
+                      className="rounded-full object-cover object-top"
+                      style={{ objectPosition: 'center 15%' }}
                     />
                   ) : (
                     <div className="w-full h-full rounded-full bg-brand-100 text-brand-600 flex items-center justify-center shadow-lg">
