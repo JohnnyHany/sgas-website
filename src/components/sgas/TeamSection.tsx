@@ -2,16 +2,20 @@
 
 import Image from "next/image";
 import { useLang } from "@/components/sgas/LanguageProvider";
-import { Crown, Shield, BookOpen, Users, Megaphone, GraduationCap, Star } from "lucide-react";
+import { Crown, Shield, BookOpen, Users, Megaphone, GraduationCap, Star, Mail } from "lucide-react";
+import { useState } from "react";
 
 interface TeamMember {
   nameEn: string;
   nameAr: string;
   roleEn: string;
   roleAr: string;
+  bioEn: string;
+  bioAr: string;
   university: "cairo" | "ainshams";
   image?: string;
   icon: typeof Crown;
+  email?: string;
 }
 
 const teamMembers: TeamMember[] = [
@@ -20,24 +24,32 @@ const teamMembers: TeamMember[] = [
     nameAr: "جوني هاني شهدي",
     roleEn: "Founder & President",
     roleAr: "المؤسس والرئيس",
+    bioEn: "Founder of SGAS - Strive and Grow in Actuarial Science. A third-year actuarial science student at Cairo University, Faculty of Commerce. Passionate about building a strong community for actuarial students and bridging the gap between academia and the professional world.",
+    bioAr: "مؤسس SGAS - اجتهد وانمُ في العلوم الاكتوارية. طالب بسنة تالتة علوم اكتوارية بكلية التجارة - جامعة القاهرة. شغوف ببناء مجتمع قوي لطلاب الاكتوار وربط الجسر بين الأكاديميا وسوق العمل.",
     university: "cairo",
     image: "/team-johnny.png",
     icon: Crown,
+    email: "JohnnyHany399@gmail.com",
   },
   {
     nameEn: "Ali Hossam",
     nameAr: "علي حسام",
     roleEn: "Vice President & Co-Founder Assistant",
     roleAr: "نائب الرئيس ومساعد المؤسس",
+    bioEn: "Vice President of SGAS and right-hand to the founder. Plays a key role in strategic planning and overseeing all SGAS operations and initiatives.",
+    bioAr: "نائب رئيس SGAS واليد اليمنى للمؤسس. يلعب دور رئيسي في التخطيط الاستراتيجي والإشراف على جميع عمليات ومبادرات SGAS.",
     university: "cairo",
     image: "/team-ali.png",
     icon: Shield,
+    email: "alibedawy966@gmail.com",
   },
   {
     nameEn: "Gann Hossam",
     nameAr: "جنه حسام",
     roleEn: "HR Manager",
     roleAr: "مدير الموارد البشرية",
+    bioEn: "Heads the Human Resources department at SGAS. Responsible for team coordination, member management, and ensuring a positive and productive team environment.",
+    bioAr: "تترأس قسم الموارد البشرية في SGAS. مسؤولة عن تنسيق الفريق وإدارة الأعضاء وضمان بيئة عمل إيجابية ومثمرة.",
     university: "cairo",
     image: "/team-ganna.png",
     icon: Users,
@@ -47,6 +59,8 @@ const teamMembers: TeamMember[] = [
     nameAr: "أحمد فهمي",
     roleEn: "Coaching Actuaries Ambassador & Academic Leader",
     roleAr: "سفير Coaching Actuaries والقائد الأكاديمي",
+    bioEn: "Serves as the official Coaching Actuaries Ambassador and leads the academic direction of SGAS. Provides guidance on professional certifications and academic development for all members.",
+    bioAr: "يعمل كسفير رسمي لـ Coaching Actuaries ويقود التوجه الأكاديمي لـ SGAS. يقدم إرشادات حول الشهادات المهنية والتطوير الأكاديمي لجميع الأعضاء.",
     university: "cairo",
     image: "/team-fahmy.png",
     icon: BookOpen,
@@ -56,6 +70,8 @@ const teamMembers: TeamMember[] = [
     nameAr: "شهد عبد السلام",
     roleEn: "HR Assistant",
     roleAr: "مساعدة مدير الموارد البشرية",
+    bioEn: "Assists the HR Manager in team coordination, member communications, and organizing internal SGAS activities and events.",
+    bioAr: "تساعد مدير الموارد البشرية في تنسيق الفريق، تواصل الأعضاء، وتنظيم الأنشطة والفعاليات الداخلية لـ SGAS.",
     university: "cairo",
     image: "/team-shahd.png",
     icon: Users,
@@ -65,30 +81,112 @@ const teamMembers: TeamMember[] = [
     nameAr: "إبراهيم أيمن",
     roleEn: "Media Controller",
     roleAr: "مسؤول الإعلام",
+    bioEn: "Manages all media and content creation for SGAS. Responsible for social media presence, graphic design, photography, and brand identity across all platforms.",
+    bioAr: "يتولى إدارة جميع وسائل الإعلام وإنشاء المحتوى لـ SGAS. مسؤول عن الحضور على منصات التواصل الاجتماعي، التصميم الجرافيكي، والتصوير.",
     university: "cairo",
+    image: "/team-ibrahim.jpg",
     icon: Megaphone,
+    email: "ebrahimayman2262@gmail.com",
   },
   {
     nameEn: "Mohamed Abdelkafi",
     nameAr: "محمد عبد القافي",
     roleEn: "Academic Leader Assistant",
     roleAr: "مساعد القائد الأكاديمي",
+    bioEn: "Assists the Academic Leader in managing study materials, organizing academic workshops, and supporting students with their coursework and exam preparation.",
+    bioAr: "يساعد القائد الأكاديمي في إدارة المواد الدراسية، تنظيم ورش العمل الأكاديمية، ودعم الطلاب في دراستهم واستعدادهم للامتحانات.",
     university: "cairo",
     image: "/team-mohamed.png",
     icon: GraduationCap,
+    email: "mbdalkafy19@gmail.com",
   },
   {
-    nameEn: "Salma",
-    nameAr: "سلمى",
+    nameEn: "Salma Mohamed",
+    nameAr: "سلمى محمد",
     roleEn: "Ain Shams University Ambassador",
     roleAr: "سفيرة جامعة عين شمس",
+    bioEn: "The official SGAS ambassador at Ain Shams University. Responsible for representing SGAS, coordinating activities, and expanding the community at Ain Shams.",
+    bioAr: "سفيرة SGAS الرسمية في جامعة عين شمس. مسؤولة عن تمثيل SGAS وتنسيق الأنشطة وتوسيع المجتمع في جامعة عين شمس.",
     university: "ainshams",
     icon: Star,
   },
 ];
 
+function MemberModal({ member, lang, onClose }: { member: TeamMember; lang: "en" | "ar"; onClose: () => void }) {
+  const isCairo = member.university === "cairo";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl animate-fade-in-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 end-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          ✕
+        </button>
+
+        {/* Photo */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="relative w-28 h-28 mb-4">
+            {member.image ? (
+              <Image
+                src={member.image}
+                alt={member.nameEn}
+                width={112}
+                height={112}
+                className="rounded-full object-cover shadow-lg"
+              />
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-brand-100 flex items-center justify-center shadow-lg">
+                <member.icon className="h-12 w-12 text-brand-600" />
+              </div>
+            )}
+          </div>
+          <h3 className="text-xl font-bold text-gray-900">
+            {lang === "en" ? member.nameEn : member.nameAr}
+          </h3>
+          <p className="text-sm text-brand-600 font-medium mt-1">
+            {lang === "en" ? member.roleEn : member.roleAr}
+          </p>
+          <span className={`mt-2 text-xs font-semibold px-3 py-1 rounded-full border ${
+            isCairo
+              ? "bg-brand-100 text-brand-700 border-brand-200"
+              : "bg-red-brand-100 text-red-brand-700 border-red-brand-200"
+          }`}>
+            {isCairo
+              ? (lang === "en" ? "Cairo University" : "جامعة القاهرة")
+              : (lang === "en" ? "Ain Shams University" : "جامعة عين شمس")}
+          </span>
+        </div>
+
+        {/* Bio */}
+        <p className="text-gray-600 text-sm leading-relaxed mb-6 text-center">
+          {lang === "en" ? member.bioEn : member.bioAr}
+        </p>
+
+        {/* Email */}
+        {member.email && (
+          <a
+            href={`mailto:${member.email}`}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-medium text-sm transition-colors border border-brand-200"
+          >
+            <Mail className="h-4 w-4" />
+            {member.email}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TeamSection() {
   const { lang } = useLang();
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
   return (
     <section id="team" className="py-20 sm:py-28 bg-gray-50">
@@ -105,7 +203,7 @@ export default function TeamSection() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             {lang === "en"
               ? "The dedicated team behind SGAS, working together to build the best community for actuarial science students in Egypt."
-              : "الفريق الم dedicatd الذي يقف خلف SGAS، يعملون معاً لبناء أفضل مجتمع لطلاب العلوم الاكتوارية في مصر."}
+              : "الفريق الملتزم الذي يقف خلف SGAS، يعملون معاً لبناء أفضل مجتمع لطلاب العلوم الاكتوارية في مصر."}
           </p>
         </div>
 
@@ -114,28 +212,19 @@ export default function TeamSection() {
           {teamMembers.map((member, index) => {
             const IconComp = member.icon;
             const isCairo = member.university === "cairo";
-            const borderColor = index === 0
-              ? "border-amber-300 hover:border-amber-400"
-              : isCairo
+            const borderColor = isCairo
               ? "border-brand-200 hover:border-brand-400"
               : "border-red-brand-200 hover:border-red-brand-400";
 
-            const iconBg = index === 0
-              ? "bg-amber-100 text-amber-600"
-              : isCairo
-              ? "bg-brand-100 text-brand-600"
-              : "bg-red-brand-100 text-red-brand-600";
-
-            const badgeBg = index === 0
-              ? "bg-amber-100 text-amber-700 border-amber-200"
-              : isCairo
+            const badgeBg = isCairo
               ? "bg-brand-100 text-brand-700 border-brand-200"
               : "bg-red-brand-100 text-red-brand-700 border-red-brand-200";
 
             return (
               <div
                 key={index}
-                className={`group bg-white rounded-2xl border ${borderColor} p-6 text-center hover:shadow-xl transition-all duration-500 relative overflow-hidden`}
+                onClick={() => setSelectedMember(member)}
+                className={`group bg-white rounded-2xl border ${borderColor} p-6 text-center hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer`}
               >
                 {/* University Badge */}
                 <span
@@ -156,15 +245,8 @@ export default function TeamSection() {
                       className="rounded-full object-cover group-hover:scale-105 transition-transform duration-300 shadow-lg"
                     />
                   ) : (
-                    <div className={`w-24 h-24 rounded-full ${iconBg} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300`}>
+                    <div className={`w-24 h-24 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300`}>
                       <IconComp className="h-10 w-10" />
-                    </div>
-                  )}
-
-                  {/* Founder Badge for first member */}
-                  {index === 0 && (
-                    <div className="absolute -bottom-1 -end-1 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                      <Crown className="h-4 w-4 text-white" />
                     </div>
                   )}
                 </div>
@@ -179,13 +261,30 @@ export default function TeamSection() {
                   {lang === "en" ? member.roleEn : member.roleAr}
                 </p>
 
+                {/* Email hint */}
+                {member.email && (
+                  <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    {lang === "en" ? "Click to view profile" : "اضغط لعرض الملف الشخصي"}
+                  </p>
+                )}
+
                 {/* Decorative line */}
-                <div className="w-12 h-0.5 bg-gradient-to-r from-brand-400 to-red-brand-400 mx-auto rounded-full opacity-50" />
+                <div className="w-12 h-0.5 bg-gradient-to-r from-brand-400 to-red-brand-400 mx-auto rounded-full opacity-50 mt-3" />
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Modal */}
+      {selectedMember && (
+        <MemberModal
+          member={selectedMember}
+          lang={lang}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
     </section>
   );
 }

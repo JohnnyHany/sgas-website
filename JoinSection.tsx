@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import {
   Linkedin,
+  Instagram,
   MessageCircle,
   Mail,
   ExternalLink,
@@ -30,8 +31,8 @@ export default function JoinSection() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">{j.description[lang]}</p>
         </div>
 
-        {/* Social Cards Grid - removed Instagram */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        {/* Social Cards Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {/* LinkedIn */}
           <a
             href="#"
@@ -45,6 +46,24 @@ export default function JoinSection() {
             <h3 className="text-lg font-bold text-gray-900 mb-1">LinkedIn</h3>
             <p className="text-sm text-gray-500 mb-4">{j.linkedinLabel[lang]}</p>
             <span className="inline-flex items-center gap-1 text-sm text-blue-600 font-medium group-hover:gap-2 transition-all">
+              {j.followUs[lang]}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </span>
+          </a>
+
+          {/* Instagram */}
+          <a
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-pink-200 shadow-sm hover:shadow-xl hover:shadow-pink-500/10 transition-all duration-500 text-center"
+          >
+            <div className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-pink-600 group-hover:scale-110 transition-all duration-300">
+              <Instagram className="h-8 w-8 text-pink-600 group-hover:text-white transition-colors duration-300" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Instagram</h3>
+            <p className="text-sm text-gray-500 mb-4">{j.instagramLabel[lang]}</p>
+            <span className="inline-flex items-center gap-1 text-sm text-pink-600 font-medium group-hover:gap-2 transition-all">
               {j.followUs[lang]}
               <ExternalLink className="h-3.5 w-3.5" />
             </span>
@@ -70,7 +89,7 @@ export default function JoinSection() {
 
           {/* Email */}
           <a
-            href="mailto:SGAS.hub@gmail.com"
+            href="mailto:sgas.cu.eg@gmail.com"
             className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-brand-200 shadow-sm hover:shadow-xl hover:shadow-brand-500/10 transition-all duration-500 text-center"
           >
             <div className="w-16 h-16 bg-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-brand-700 group-hover:scale-110 transition-all duration-300">
@@ -98,23 +117,17 @@ export default function JoinSection() {
               <Button
                 size="lg"
                 className="bg-white text-brand-800 hover:bg-brand-50 px-8 py-6 rounded-xl font-bold shadow-lg transition-all duration-300"
-                asChild
               >
-                <a href="https://chat.whatsapp.com/GFwGss82nOQKnsHn6l88vE" target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="me-2 h-5 w-5" />
-                  {j.ctaWhatsApp[lang]}
-                </a>
+                <MessageCircle className="me-2 h-5 w-5" />
+                <a href="https://chat.whatsapp.com/GFwGss82nOQKnsHn6l88vE" target="_blank" rel="noopener noreferrer" className="text-inherit no-underline">{j.ctaWhatsApp[lang]}</a>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-6 rounded-xl font-bold transition-all duration-300"
-                asChild
               >
-                <a href="mailto:SGAS.hub@gmail.com">
-                  <Mail className="me-2 h-5 w-5" />
-                  {j.ctaEmail[lang]}
-                </a>
+                <Mail className="me-2 h-5 w-5" />
+                {j.ctaEmail[lang]}
               </Button>
             </div>
           </div>

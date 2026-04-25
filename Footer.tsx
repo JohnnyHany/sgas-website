@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Linkedin, MessageCircle, Mail, Heart } from "lucide-react";
+import { Linkedin, Instagram, MessageCircle, Mail, Heart } from "lucide-react";
 import { useLang } from "@/components/sgas/LanguageProvider";
 import { translations } from "@/lib/i18n";
 
@@ -82,11 +82,11 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="mailto:SGAS.hub@gmail.com"
+                  href="mailto:sgas.cu.eg@gmail.com"
                   className="flex items-center gap-2 text-brand-300 hover:text-white transition-colors text-sm"
                 >
                   <Mail className="h-4 w-4" />
-                  SGAS.hub@gmail.com
+                  sgas.cu.eg@gmail.com
                 </a>
               </li>
               <li>
@@ -98,6 +98,17 @@ export default function Footer() {
                 >
                   <Linkedin className="h-4 w-4" />
                   SGAS - LinkedIn
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-brand-300 hover:text-white transition-colors text-sm"
+                >
+                  <Instagram className="h-4 w-4" />
+                  @sgas.cu
                 </a>
               </li>
               <li>

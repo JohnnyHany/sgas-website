@@ -78,14 +78,6 @@ export default function UniversitiesSection() {
             </div>
           </div>
         </div>
-
-        {/* Call to Action */}
-        <div className="text-center mt-12">
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-brand-50 rounded-full text-brand-700 text-sm font-medium border border-brand-200">
-            <span className="w-2 h-2 rounded-full bg-red-brand-500 animate-pulse" />
-            {u.expansion[lang]}
-          </div>
-        </div>
       </div>
     </section>
   );
