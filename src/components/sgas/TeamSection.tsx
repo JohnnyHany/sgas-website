@@ -82,10 +82,10 @@ const teamMembers: TeamMember[] = [
   {
     nameEn: "Ebrahim Aymn",
     nameAr: "إبراهيم أيمن",
-    roleEn: "Media Controller",
-    roleAr: "مسؤول الإعلام",
-    bioEn: "Manages all media and content creation for SGAS. Responsible for social media presence, graphic design, photography, and brand identity across all platforms.",
-    bioAr: "يتولى إدارة جميع وسائل الإعلام وإنشاء المحتوى لـ SGAS. مسؤول عن الحضور على منصات التواصل الاجتماعي، التصميم الجرافيكي، والتصوير.",
+    roleEn: "Content Creator & Creative Director",
+    roleAr: "كونتنت كرياتور و كرياتيف ديريكتور",
+    bioEn: "Leads content creation and creative direction for SGAS. Responsible for designing visual content, developing creative strategies, and managing the brand identity across all platforms.",
+    bioAr: "يقود إنشاء المحتوى والإخراج الإبداعي لـ SGAS. مسؤول عن تصميم المحتوى المرئي، تطوير الاستراتيجيات الإبداعية، وإدارة الهوية البصرية على جميع المنصات.",
     university: "cairo",
     image: "/team-ibrahim.jpg",
     icon: Megaphone,
@@ -127,7 +127,6 @@ function MemberModal({ member, lang, onClose }: { member: TeamMember; lang: "en"
         className="relative bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 end-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors"
@@ -135,7 +134,6 @@ function MemberModal({ member, lang, onClose }: { member: TeamMember; lang: "en"
           ✕
         </button>
 
-        {/* Photo */}
         <div className="flex flex-col items-center mb-6">
           <div className="relative w-28 h-28 mb-4 overflow-hidden rounded-full">
             {member.image ? (
@@ -170,12 +168,10 @@ function MemberModal({ member, lang, onClose }: { member: TeamMember; lang: "en"
           </span>
         </div>
 
-        {/* Bio */}
         <p className="text-gray-600 text-sm leading-relaxed mb-6 text-center">
           {lang === "en" ? member.bioEn : member.bioAr}
         </p>
 
-        {/* Email */}
         {member.email && (
           <a
             href={`mailto:${member.email}`}
@@ -197,7 +193,6 @@ export default function TeamSection() {
   return (
     <section id="team" className="py-20 sm:py-28 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 bg-brand-50 text-brand-700 rounded-full text-sm font-semibold mb-4">
             {lang === "en" ? "Our Team" : "فريقنا"}
@@ -213,7 +208,6 @@ export default function TeamSection() {
           </p>
         </div>
 
-        {/* Team Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {teamMembers.map((member, index) => {
             const IconComp = member.icon;
@@ -232,7 +226,6 @@ export default function TeamSection() {
                 onClick={() => setSelectedMember(member)}
                 className={`group bg-white rounded-2xl border ${borderColor} p-6 text-center hover:shadow-xl transition-all duration-500 relative overflow-hidden cursor-pointer`}
               >
-                {/* University Badge */}
                 <span
                   className={`absolute top-3 end-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badgeBg}`}
                 >
@@ -241,7 +234,6 @@ export default function TeamSection() {
                     : lang === "en" ? "Ain Shams Uni" : "عين شمس"}
                 </span>
 
-                {/* Photo or Initials */}
                 <div className="relative w-24 h-24 mx-auto mb-5 overflow-hidden rounded-full">
                   {member.image ? (
                     <Image
@@ -259,17 +251,14 @@ export default function TeamSection() {
                   )}
                 </div>
 
-                {/* Name */}
                 <h3 className="text-lg font-bold text-gray-900 mb-1">
                   {lang === "en" ? member.nameEn : member.nameAr}
                 </h3>
 
-                {/* Role */}
                 <p className="text-sm text-brand-600 font-medium mb-3 leading-relaxed">
                   {lang === "en" ? member.roleEn : member.roleAr}
                 </p>
 
-                {/* Email hint */}
                 {member.email && (
                   <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
                     <Mail className="h-3 w-3" />
@@ -277,7 +266,6 @@ export default function TeamSection() {
                   </p>
                 )}
 
-                {/* Decorative line */}
                 <div className="w-12 h-0.5 bg-gradient-to-r from-brand-400 to-red-brand-400 mx-auto rounded-full opacity-50 mt-3" />
               </div>
             );
@@ -285,7 +273,6 @@ export default function TeamSection() {
         </div>
       </div>
 
-      {/* Modal */}
       {selectedMember && (
         <MemberModal
           member={selectedMember}

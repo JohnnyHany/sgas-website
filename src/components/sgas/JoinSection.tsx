@@ -19,7 +19,6 @@ export default function JoinSection() {
   return (
     <section id="join" className="py-20 sm:py-28 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1.5 bg-brand-50 text-brand-700 rounded-full text-sm font-semibold mb-4">
             {j.badge[lang]}
@@ -30,11 +29,9 @@ export default function JoinSection() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">{j.description[lang]}</p>
         </div>
 
-        {/* Social Cards Grid - removed Instagram */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {/* LinkedIn */}
           <a
-            href="#"
+            href="https://www.linkedin.com/company/sgas/"
             target="_blank"
             rel="noopener noreferrer"
             className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-500 text-center"
@@ -50,7 +47,6 @@ export default function JoinSection() {
             </span>
           </a>
 
-          {/* WhatsApp */}
           <a
             href="https://chat.whatsapp.com/GFwGss82nOQKnsHn6l88vE"
             target="_blank"
@@ -68,7 +64,6 @@ export default function JoinSection() {
             </span>
           </a>
 
-          {/* Email */}
           <a
             href="mailto:SGAS.hub@gmail.com"
             className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-brand-200 shadow-sm hover:shadow-xl hover:shadow-brand-500/10 transition-all duration-500 text-center"
@@ -85,7 +80,6 @@ export default function JoinSection() {
           </a>
         </div>
 
-        {/* CTA Banner */}
         <div className="relative bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 rounded-3xl p-8 sm:p-12 overflow-hidden">
           <div className="absolute top-0 start-0 w-64 h-64 bg-red-brand-600/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 end-0 w-64 h-64 bg-leaf-500/10 rounded-full blur-3xl" />

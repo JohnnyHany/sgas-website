@@ -16,9 +16,7 @@ export default function Footer() {
   return (
     <footer className="bg-brand-950 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Main Footer */}
         <div className="py-12 sm:py-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="relative w-10 h-10 rounded-xl overflow-hidden">
@@ -36,7 +34,6 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Quick Links */}
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
               {f.quickLinks[lang]}
@@ -61,7 +58,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Universities */}
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
               {f.ourUniversities[lang]}
@@ -78,7 +74,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact */}
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
               {f.contactUs[lang]}
@@ -95,7 +90,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://www.linkedin.com/company/sgas/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-brand-300 hover:text-white transition-colors text-sm"
@@ -119,19 +114,18 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="py-6 border-t border-brand-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-brand-400">
             {f.copyright[lang](new Date().getFullYear().toString())}
           </p>
           <div className="flex items-center gap-4">
             {!isAdmin && (
-              <button
-                onClick={() => { window.location.href = "/login"; }}
+              <Link
+                href="/login"
                 className="text-xs text-brand-500 hover:text-brand-300 transition-colors"
               >
                 Admin
-              </button>
+              </Link>
             )}
             <p className="text-sm text-brand-400 flex items-center gap-1">
               {f.madeWith[lang]} <Heart className="h-3.5 w-3.5 text-red-brand-500 fill-red-brand-500" /> {f.byStudents[lang]}
