@@ -92,7 +92,7 @@ const teamMembers: TeamMember[] = [
   },
   {
     nameEn: "Mohamed Abdelkafi",
-    nameAr: "محمد عبد القافي",
+    nameAr: "محمد عبد الكافي",
     roleEn: "Academic Leader Assistant",
     roleAr: "مساعد القائد الأكاديمي",
     bioEn: "Assists the Academic Leader in managing study materials, organizing academic workshops, and supporting students with their coursework and exam preparation.",
