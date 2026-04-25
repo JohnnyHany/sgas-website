@@ -110,6 +110,7 @@ const teamMembers: TeamMember[] = [
     bioEn: "The official SGAS ambassador at Ain Shams University. Responsible for representing SGAS, coordinating activities, and expanding the community at Ain Shams.",
     bioAr: "سفيرة SGAS الرسمية في جامعة عين شمس. مسؤولة عن تمثيل SGAS وتنسيق الأنشطة وتوسيع المجتمع في جامعة عين شمس.",
     university: "ainshams",
+    image: "/team-salma.jpg",
     icon: Star,
     email: "salmamahmoud7454@gmail.com",
   },
