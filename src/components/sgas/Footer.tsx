@@ -1,12 +1,16 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Linkedin, MessageCircle, Mail, Heart } from "lucide-react";
 import { useLang } from "@/components/sgas/LanguageProvider";
+import { useAdmin } from "@/components/sgas/AdminProvider";
 import { translations } from "@/lib/i18n";
+import Link from "next/link";
 
 export default function Footer() {
   const { lang } = useLang();
+  const { isAdmin } = useAdmin();
   const f = translations.footer;
 
   return (
@@ -120,9 +124,19 @@ export default function Footer() {
           <p className="text-sm text-brand-400">
             {f.copyright[lang](new Date().getFullYear().toString())}
           </p>
-          <p className="text-sm text-brand-400 flex items-center gap-1">
-            {f.madeWith[lang]} <Heart className="h-3.5 w-3.5 text-red-brand-500 fill-red-brand-500" /> {f.byStudents[lang]}
-          </p>
+          <div className="flex items-center gap-4">
+            {!isAdmin && (
+              <Link
+                href="/login"
+                className="text-xs text-brand-500 hover:text-brand-300 transition-colors"
+              >
+                Admin
+              </Link>
+            )}
+            <p className="text-sm text-brand-400 flex items-center gap-1">
+              {f.madeWith[lang]} <Heart className="h-3.5 w-3.5 text-red-brand-500 fill-red-brand-500" /> {f.byStudents[lang]}
+            </p>
+          </div>
         </div>
       </div>
     </footer>

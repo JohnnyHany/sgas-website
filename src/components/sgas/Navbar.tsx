@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { Menu, X, Languages } from "lucide-react";
+import { Menu, X, Languages, Shield } from "lucide-react";
 import { useLang } from "@/components/sgas/LanguageProvider";
+import { useAdmin } from "@/components/sgas/AdminProvider";
 import { translations } from "@/lib/i18n";
+import Link from "next/link";
 
 const navKeys = [
   { href: "#home", key: "home" },
@@ -15,7 +17,17 @@ const navKeys = [
   { href: "#join", key: "join" },
 ];
 
-function MobileMenu({ open, onClose, lang }: { open: boolean; onClose: () => void; lang: "en" | "ar" }) {
+function MobileMenu({
+  open,
+  onClose,
+  lang,
+  isAdmin,
+}: {
+  open: boolean;
+  onClose: () => void;
+  lang: "en" | "ar";
+  isAdmin: boolean;
+}) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -26,13 +38,11 @@ function MobileMenu({ open, onClose, lang }: { open: boolean; onClose: () => voi
 
   return createPortal(
     <>
-      {/* Backdrop */}
       <div
         className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm"
         style={{ zIndex: 9998 }}
         onClick={onClose}
       />
-      {/* Menu Panel */}
       <div
         className={`lg:hidden fixed top-0 bottom-0 w-72 bg-white shadow-2xl overflow-y-auto ${
           lang === "ar" ? "right-0" : "left-0"
@@ -60,6 +70,17 @@ function MobileMenu({ open, onClose, lang }: { open: boolean; onClose: () => voi
                 {translations.nav[link.key as keyof typeof translations.nav][lang]}
               </a>
             ))}
+            {/* Admin link in mobile menu */}
+            <Link
+              href={isAdmin ? "/admin" : "/login"}
+              onClick={onClose}
+              className="px-4 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2"
+            >
+              <Shield className="h-4 w-4" />
+              <span className={isAdmin ? "text-brand-600 bg-brand-50 hover:bg-brand-100" : "text-gray-700 hover:bg-brand-50 hover:text-brand-700"}>
+                {isAdmin ? "Admin Dashboard" : (lang === "en" ? "Admin Login" : "دخول الأدمن")}
+              </span>
+            </Link>
           </div>
           <div className="mt-auto p-4 border-t border-brand-100">
             <div className="p-4 bg-brand-50 rounded-xl">
@@ -76,6 +97,7 @@ function MobileMenu({ open, onClose, lang }: { open: boolean; onClose: () => voi
 
 export default function Navbar() {
   const { lang, setLang } = useLang();
+  const { isAdmin } = useAdmin();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -87,7 +109,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) setMobileOpen(false);
@@ -110,12 +131,7 @@ export default function Navbar() {
             {/* Logo */}
             <a href="#home" className="flex items-center gap-3 group">
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden shadow-lg group-hover:shadow-brand-500/30 transition-all duration-300">
-                <Image
-                  src="/sgas-logo.png"
-                  alt="SGAS Logo"
-                  fill
-                  className="object-cover"
-                />
+                <Image src="/sgas-logo.png" alt="SGAS Logo" fill className="object-cover" />
               </div>
               <div className="flex flex-col">
                 <span
@@ -151,6 +167,21 @@ export default function Navbar() {
                 </a>
               ))}
 
+              {/* Admin Button */}
+              <Link
+                href={isAdmin ? "/admin" : "/login"}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ms-1 ${
+                  isAdmin
+                    ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
+                    : scrolled
+                      ? "text-gray-500 hover:text-brand-700 hover:bg-brand-50"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Shield className="h-4 w-4" />
+                <span className="hidden xl:inline">{isAdmin ? "Dashboard" : "Admin"}</span>
+              </Link>
+
               {/* Language Toggle */}
               <button
                 onClick={() => setLang(lang === "en" ? "ar" : "en")}
@@ -167,6 +198,18 @@ export default function Navbar() {
 
             {/* Mobile: Language + Menu */}
             <div className="flex items-center gap-2 lg:hidden">
+              {/* Admin icon (mobile) */}
+              <Link
+                href={isAdmin ? "/admin" : "/login"}
+                className={`p-2 rounded-lg transition-all duration-300 ${
+                  isAdmin
+                    ? "text-brand-600"
+                    : scrolled ? "text-brand-700 hover:bg-brand-50" : "text-white hover:bg-white/10"
+                }`}
+              >
+                <Shield className="h-5 w-5" />
+              </Link>
+
               <button
                 onClick={() => setLang(lang === "en" ? "ar" : "en")}
                 className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
@@ -192,11 +235,12 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu - rendered via portal outside the nav to avoid backdrop-blur stacking context issues */}
+      {/* Mobile Menu - Portal */}
       <MobileMenu
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         lang={lang}
+        isAdmin={isAdmin}
       />
     </>
   );
