@@ -13,16 +13,18 @@ export const ALLOWED_ADMINS = [
   "ebrahimayman2262@gmail.com",
   "mbdalkafy19@gmail.com",
   "salmamahmoud7454@gmail.com",
+  "Fahmyhamed123@gmail.com",
 ];
 
 export const ADMIN_NAMES: Record<string, string> = {
-  "johnnyhany399@gmail.com": "Johnny Hany Shohdy",
+  "johnnyhany399@gmail.com": "Johnny Hany",
   "alibedawy966@gmail.com": "Ali Hossam",
-  "hossamganna3@gmail.com": "Gann Hossam",
+  "hossamganna399@gmail.com": "Gann Hossam",
   "shahd.abdelsalam1326@gmail.com": "Shahd Abdelsalam",
   "ebrahimayman2262@gmail.com": "Ebrahim Aymn",
   "mbdalkafy19@gmail.com": "Mohamed Abdelkafi",
   "salmamahmoud7454@gmail.com": "Salma Mohamed",
+  "Fahmyhamed123@gmail.com": "Ahmed Fahmy",
 };
 
 // ===== JWT Helpers =====
@@ -61,7 +63,6 @@ export function isAllowedAdmin(email: string): boolean {
 
 // ===== Data Directory (uses /tmp on Vercel for write access) =====
 function getDataDir(): string {
-  // Vercel serverless allows writing to /tmp
   const tmpDir = '/tmp/sgas-data';
   if (!fs.existsSync(tmpDir)) {
     fs.mkdirSync(tmpDir, { recursive: true });
@@ -83,7 +84,6 @@ export function getAdminsData(): Record<string, AdminData> {
       const data = fs.readFileSync(filePath, 'utf-8');
       return JSON.parse(data);
     }
-    // First time: copy from project data/ if available
     const projectFile = path.join(process.cwd(), 'data', 'admins.json');
     if (fs.existsSync(projectFile)) {
       const data = fs.readFileSync(projectFile, 'utf-8');
@@ -111,7 +111,6 @@ export function getEventsData(): any[] {
       const data = fs.readFileSync(filePath, 'utf-8');
       return JSON.parse(data);
     }
-    // First time: copy from project data/ if available
     const projectFile = path.join(process.cwd(), 'data', 'events.json');
     if (fs.existsSync(projectFile)) {
       const data = fs.readFileSync(projectFile, 'utf-8');

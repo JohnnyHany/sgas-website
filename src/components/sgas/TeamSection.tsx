@@ -20,8 +20,8 @@ interface TeamMember {
 
 const teamMembers: TeamMember[] = [
   {
-    nameEn: "Johnny Hany Shohdy",
-    nameAr: "جوني هاني شهدي",
+    nameEn: "Johnny Hany",
+    nameAr: "جوني هاني",
     roleEn: "Founder & President",
     roleAr: "المؤسس والرئيس",
     bioEn: "Founder of SGAS - Strive and Grow in Actuarial Science. A third-year actuarial science student at Cairo University, Faculty of Commerce. Passionate about building a strong community for actuarial students and bridging the gap between academia and the professional world.",
@@ -65,6 +65,7 @@ const teamMembers: TeamMember[] = [
     university: "cairo",
     image: "/team-fahmy.png",
     icon: BookOpen,
+    email: "Fahmyhamed123@gmail.com",
   },
   {
     nameEn: "Shahd Abdelsalam",

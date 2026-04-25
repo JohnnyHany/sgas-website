@@ -84,7 +84,7 @@ export default function HeroSection() {
         <div className="animate-fade-in-up-delay-3 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
           {[
             { icon: GraduationCap, value: "2+", label: hero.statUniversities[lang] },
-            { icon: Users, value: "500+", label: hero.statStudents[lang] },
+            { icon: Users, value: "100+", label: hero.statStudents[lang] },
             { icon: BookOpen, value: "30+", label: hero.statMaterials[lang] },
             { icon: CalendarDays, value: "15+", label: hero.statEvents[lang] },
           ].map((stat, index) => (

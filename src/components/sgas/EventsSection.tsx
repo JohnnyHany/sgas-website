@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useLang } from "@/components/sgas/LanguageProvider";
 import { useAdmin } from "@/components/sgas/AdminProvider";
 import { translations } from "@/lib/i18n";
-import { Badge } from "@/components/ui/badge";
 import {
   CalendarDays,
   MapPin,
@@ -15,6 +14,7 @@ import {
   Mic,
   Briefcase,
   Pencil,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -46,12 +46,110 @@ const typeConfigMap: Record<string, {
   networking: { icon: Briefcase, en: "Networking", ar: "تواصل مهني", color: "bg-leaf-100 text-leaf-700 border-leaf-200" },
 };
 
+function EventModal({ event, lang, onClose }: { event: SGASEvent; lang: "en" | "ar"; onClose: () => void }) {
+  const config = typeConfigMap[event.type] || typeConfigMap.networking;
+  const Icon = config.icon;
+  const typeLabel = config[lang as "en" | "ar"];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative bg-white rounded-3xl max-w-lg w-full shadow-2xl animate-fade-in-up overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 end-4 z-10 w-8 h-8 rounded-full bg-white/80 hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors shadow-sm"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Header with gradient */}
+        <div className="bg-gradient-to-r from-brand-700 to-brand-900 px-8 pt-8 pb-6 text-white">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <Icon className="h-5 w-5" />
+            </div>
+            <span className={`text-xs font-medium px-3 py-1 rounded-full border bg-white/15 border-white/25 text-white`}>
+              {typeLabel}
+            </span>
+            <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+              event.status === "upcoming"
+                ? "bg-green-500/20 text-green-200"
+                : "bg-white/10 text-white/60"
+            }`}>
+              {event.status === "upcoming"
+                ? (lang === "en" ? "Upcoming" : "قادمة")
+                : (lang === "en" ? "Past Event" : "فعالية سابقة")}
+            </span>
+          </div>
+          <h3 className="text-xl font-bold leading-tight">
+            {lang === "en" ? event.titleEn : event.titleAr}
+          </h3>
+        </div>
+
+        {/* Body */}
+        <div className="px-8 py-6 space-y-5">
+          {/* Info row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <CalendarDays className="h-4 w-4 text-brand-500 shrink-0" />
+              <span>{lang === "en" ? event.dateEn : event.dateAr}</span>
+            </div>
+            {event.time && event.time !== "TBA" && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Clock className="h-4 w-4 text-brand-500 shrink-0" />
+                <span>{event.time}</span>
+              </div>
+            )}
+            {(event.locationEn || event.locationAr) && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <MapPin className="h-4 w-4 text-red-brand-500 shrink-0" />
+                <span>{lang === "en" ? event.locationEn : event.locationAr}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {lang === "en" ? event.descEn : event.descAr}
+            </p>
+          </div>
+
+          {/* Highlights */}
+          {event.highlights && event.highlights.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                {lang === "en" ? "Highlights" : "أبرز النقاط"}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {event.highlights.map((h, i) => (
+                  <span
+                    key={i}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-full border ${config.color}`}
+                  >
+                    {h}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EventsSection() {
   const { lang } = useLang();
   const { isAdmin } = useAdmin();
   const ev = translations.events;
   const [events, setEvents] = useState<SGASEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState<SGASEvent | null>(null);
 
   useEffect(() => {
     fetch("/api/events")
@@ -77,13 +175,15 @@ export default function EventsSection() {
     return (
       <div
         key={event.id}
-        className="group bg-white rounded-xl border border-gray-100 p-5 hover:shadow-lg hover:border-gray-200 transition-all duration-300 relative"
+        onClick={() => setSelectedEvent(event)}
+        className="group bg-white rounded-xl border border-gray-100 p-5 hover:shadow-lg hover:border-gray-200 transition-all duration-300 relative cursor-pointer"
       >
         {/* Admin edit button */}
         {isAdmin && (
           <Link
             href="/admin"
-            className="absolute top-3 end-3 p-1.5 rounded-lg text-gray-300 hover:text-brand-600 hover:bg-brand-50 transition-colors opacity-0 group-hover:opacity-100"
+            className="absolute top-3 end-3 p-1.5 rounded-lg text-gray-300 hover:text-brand-600 hover:bg-brand-50 transition-colors opacity-0 group-hover:opacity-100 z-10"
+            onClick={(e) => e.stopPropagation()}
           >
             <Pencil className="h-3.5 w-3.5" />
           </Link>
@@ -173,6 +273,15 @@ export default function EventsSection() {
           </div>
         )}
       </div>
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <EventModal
+          event={selectedEvent}
+          lang={lang}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
     </section>
   );
 }
