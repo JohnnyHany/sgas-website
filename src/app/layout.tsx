@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { LanguageProvider } from "@/components/sgas/LanguageProvider";
@@ -85,6 +86,7 @@ export default function RootLayout({
           <AdminProvider>
             {children}
             <Toaster />
+<Analytics />
           </AdminProvider>
         </LanguageProvider>
       </body>
