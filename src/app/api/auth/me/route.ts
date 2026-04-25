@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
   }
 
-  const admins = getAdminsData();
+  const admins = await getAdminsData();
   const admin = admins[payload.email.toLowerCase()];
 
   if (!admin) {
