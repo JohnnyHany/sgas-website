@@ -1,53 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminsData, comparePassword, createToken } from '@/lib/auth';
+import { verifyToken, getAdminsData, getEventsData, saveEventsData } from '@/lib/auth';
 
-export async function POST(req: NextRequest) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { email, password, rememberMe } = await req.json();
+    const { id } = await params;
+    const token = req.cookies.get('sgas-token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-    console.log('Login attempt for:', normalizedEmail);
+    const payload = await verifyToken(token);
+    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const admins = await getAdminsData();
-    console.log('Found admins:', Object.keys(admins).join(', '));
-
-    const admin = admins[normalizedEmail];
-
-    if (!admin) {
-      console.log('Admin not found in database for:', normalizedEmail);
-      return NextResponse.json({ error: 'Admin account not found. Please sign up first.' }, { status: 404 });
+    if (!admins[payload.email.toLowerCase()]) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('Found admin, comparing password...');
-    const valid = await comparePassword(password, admin.passwordHash);
-    if (!valid) {
-      console.log('Password mismatch for:', normalizedEmail);
-      return NextResponse.json({ error: 'Wrong password. Please try again.' }, { status: 401 });
-    }
+    const events = await getEventsData();
+    const index = events.findIndex((e: any) => e.id === id);
+    if (index === -1) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 
-    console.log('Login successful for:', normalizedEmail);
-    const token = await createToken(normalizedEmail, rememberMe);
+    const updatedData = await req.json();
+    events[index] = { ...events[index], ...updatedData, id };
+    await saveEventsData(events);
 
-    const response = NextResponse.json({
-      success: true,
-      admin: { email: normalizedEmail, name: admin.name }
-    });
-
-    response.cookies.set('sgas-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: rememberMe ? 90 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
-      path: '/',
-    });
-
-    return response;
+    return NextResponse.json({ success: true, event: events[index] });
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Update event error:', error);
+    return NextResponse.json({ error: 'Failed to update event' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const token = req.cookies.get('sgas-token')?.value;
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const payload = await verifyToken(token);
+    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const admins = await getAdminsData();
+    if (!admins[payload.email.toLowerCase()]) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const events = await getEventsData();
+    const filtered = events.filter((e: any) => e.id !== id);
+    if (filtered.length === events.length) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    }
+
+    await saveEventsData(filtered);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete event error:', error);
+    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
   }
 }
