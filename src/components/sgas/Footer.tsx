@@ -126,12 +126,12 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-4">
             {!isAdmin && (
-              <Link
-                href="/login"
+              <button
+                onClick={() => { window.location.href = "/login"; }}
                 className="text-xs text-brand-500 hover:text-brand-300 transition-colors"
               >
                 Admin
-              </Link>
+              </button>
             )}
             <p className="text-sm text-brand-400 flex items-center gap-1">
               {f.madeWith[lang]} <Heart className="h-3.5 w-3.5 text-red-brand-500 fill-red-brand-500" /> {f.byStudents[lang]}

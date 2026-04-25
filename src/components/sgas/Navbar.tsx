@@ -8,6 +8,7 @@ import { useLang } from "@/components/sgas/LanguageProvider";
 import { useAdmin } from "@/components/sgas/AdminProvider";
 import { translations } from "@/lib/i18n";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const navKeys = [
   { href: "#home", key: "home" },
@@ -71,16 +72,15 @@ function MobileMenu({
               </a>
             ))}
             {/* Admin link in mobile menu */}
-            <Link
-              href={isAdmin ? "/admin" : "/login"}
-              onClick={onClose}
+            <button
+              onClick={() => { onClose(); window.location.href = isAdmin ? "/admin" : "/login"; }}
               className="px-4 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2"
             >
               <Shield className="h-4 w-4" />
               <span className={isAdmin ? "text-brand-600 bg-brand-50 hover:bg-brand-100" : "text-gray-700 hover:bg-brand-50 hover:text-brand-700"}>
                 {isAdmin ? "Admin Dashboard" : (lang === "en" ? "Admin Login" : "دخول الأدمن")}
               </span>
-            </Link>
+            </button>
           </div>
           <div className="mt-auto p-4 border-t border-brand-100">
             <div className="p-4 bg-brand-50 rounded-xl">
@@ -168,8 +168,8 @@ export default function Navbar() {
               ))}
 
               {/* Admin Button */}
-              <Link
-                href={isAdmin ? "/admin" : "/login"}
+              <button
+                onClick={() => { window.location.href = isAdmin ? "/admin" : "/login"; }}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ms-1 ${
                   isAdmin
                     ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
@@ -180,7 +180,7 @@ export default function Navbar() {
               >
                 <Shield className="h-4 w-4" />
                 <span className="hidden xl:inline">{isAdmin ? "Dashboard" : "Admin"}</span>
-              </Link>
+              </button>
 
               {/* Language Toggle */}
               <button
@@ -199,8 +199,8 @@ export default function Navbar() {
             {/* Mobile: Language + Menu */}
             <div className="flex items-center gap-2 lg:hidden">
               {/* Admin icon (mobile) */}
-              <Link
-                href={isAdmin ? "/admin" : "/login"}
+              <button
+                onClick={() => { window.location.href = isAdmin ? "/admin" : "/login"; }}
                 className={`p-2 rounded-lg transition-all duration-300 ${
                   isAdmin
                     ? "text-brand-600"
@@ -208,7 +208,7 @@ export default function Navbar() {
                 }`}
               >
                 <Shield className="h-5 w-5" />
-              </Link>
+              </button>
 
               <button
                 onClick={() => setLang(lang === "en" ? "ar" : "en")}
