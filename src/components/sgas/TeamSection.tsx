@@ -133,17 +133,17 @@ function MemberModal({ member, lang, onClose }: { member: TeamMember; lang: "en"
 
         {/* Photo */}
         <div className="flex flex-col items-center mb-6">
-          <div className="relative w-28 h-28 mb-4">
+          <div className="relative w-28 h-28 mb-4 overflow-hidden rounded-full">
             {member.image ? (
               <Image
                 src={member.image}
                 alt={member.nameEn}
-                width={112}
-                height={112}
-                className="rounded-full object-cover shadow-lg"
+                fill
+                sizes="112px"
+                className="rounded-full object-cover"
               />
             ) : (
-              <div className="w-28 h-28 rounded-full bg-brand-100 flex items-center justify-center shadow-lg">
+              <div className="w-full h-full rounded-full bg-brand-100 flex items-center justify-center shadow-lg">
                 <member.icon className="h-12 w-12 text-brand-600" />
               </div>
             )}
@@ -237,17 +237,17 @@ export default function TeamSection() {
                 </span>
 
                 {/* Photo or Initials */}
-                <div className="w-24 h-24 mx-auto mb-5">
+                <div className="relative w-24 h-24 mx-auto mb-5 overflow-hidden rounded-full">
                   {member.image ? (
                     <Image
                       src={member.image}
                       alt={member.nameEn}
-                      width={96}
-                      height={96}
-                      className="rounded-full object-cover shadow-lg"
+                      fill
+                      sizes="96px"
+                      className="rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center shadow-lg">
+                    <div className="w-full h-full rounded-full bg-brand-100 text-brand-600 flex items-center justify-center shadow-lg">
                       <IconComp className="h-10 w-10" />
                     </div>
                   )}

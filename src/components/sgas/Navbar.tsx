@@ -132,19 +132,20 @@ export default function Navbar() {
 
       {/* Mobile Menu (custom - no Sheet/hydration issues) */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 top-16 z-40">
+        <>
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          {/* Menu Panel - fixed white background */}
+          {/* Menu Panel */}
           <div
-            className={`fixed top-16 bottom-0 w-72 bg-white shadow-2xl overflow-y-auto ${
+            className={`lg:hidden fixed top-0 bottom-0 w-72 bg-white shadow-2xl z-50 overflow-y-auto ${
               lang === "ar" ? "right-0" : "left-0"
             }`}
+            style={{ paddingTop: "80px" }}
           >
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col min-h-full">
               <div className="flex items-center gap-3 p-6 border-b border-brand-100">
                 <div className="relative w-10 h-10 rounded-xl overflow-hidden">
                   <Image src="/sgas-logo.png" alt="SGAS Logo" fill className="object-cover" />
@@ -174,7 +175,7 @@ export default function Navbar() {
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </nav>
   );
