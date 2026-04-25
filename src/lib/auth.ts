@@ -1,8 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+import { supabase } from './supabase';
 
 // ===== Allowed Admin Emails (Whitelist) =====
 export const ALLOWED_ADMINS = [
@@ -19,7 +17,7 @@ export const ALLOWED_ADMINS = [
 export const ADMIN_NAMES: Record<string, string> = {
   "johnnyhany399@gmail.com": "Johnny Hany",
   "alibedawy966@gmail.com": "Ali Hossam",
-  "hossamganna399@gmail.com": "Gann Hossam",
+  "hossamganna3@gmail.com": "Gann Hossam",
   "shahd.abdelsalam1326@gmail.com": "Shahd Abdelsalam",
   "ebrahimayman2262@gmail.com": "Ebrahim Aymn",
   "mbdalkafy19@gmail.com": "Mohamed Abdelkafi",
@@ -61,70 +59,106 @@ export function isAllowedAdmin(email: string): boolean {
   return ALLOWED_ADMINS.includes(email.toLowerCase().trim());
 }
 
-// ===== Data Directory (uses /tmp on Vercel for write access) =====
-function getDataDir(): string {
-  const tmpDir = '/tmp/sgas-data';
-  if (!fs.existsSync(tmpDir)) {
-    fs.mkdirSync(tmpDir, { recursive: true });
-  }
-  return tmpDir;
-}
-
-// ===== Admin Data Store (JSON file) =====
+// ===== Admin Data Store (Supabase) =====
 export interface AdminData {
   passwordHash: string;
   name: string;
 }
 
-export function getAdminsData(): Record<string, AdminData> {
+export async function getAdminsData(): Promise<Record<string, AdminData>> {
   try {
-    const dir = getDataDir();
-    const filePath = path.join(dir, 'admins.json');
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, 'utf-8');
-      return JSON.parse(data);
+    const { data, error } = await supabase
+      .from('admins')
+      .select('email, password_hash, name');
+
+    if (error) {
+      console.error('Failed to fetch admins from Supabase:', error);
+      return {};
     }
-    const projectFile = path.join(process.cwd(), 'data', 'admins.json');
-    if (fs.existsSync(projectFile)) {
-      const data = fs.readFileSync(projectFile, 'utf-8');
-      const parsed = JSON.parse(data);
-      fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2));
-      return parsed;
+
+    const admins: Record<string, AdminData> = {};
+    for (const row of (data || [])) {
+      admins[row.email.toLowerCase()] = {
+        passwordHash: row.password_hash,
+        name: row.name,
+      };
     }
-    return {};
-  } catch {
+    return admins;
+  } catch (error) {
+    console.error('getAdminsData error:', error);
     return {};
   }
 }
 
-export function saveAdminsData(data: Record<string, AdminData>): void {
-  const dir = getDataDir();
-  fs.writeFileSync(path.join(dir, 'admins.json'), JSON.stringify(data, null, 2));
+export async function saveAdminsData(data: Record<string, AdminData>): Promise<void> {
+  try {
+    // Upsert each admin
+    for (const [email, adminData] of Object.entries(data)) {
+      const { error } = await supabase
+        .from('admins')
+        .upsert({
+          email: email.toLowerCase(),
+          password_hash: adminData.passwordHash,
+          name: adminData.name,
+        }, { onConflict: 'email' });
+
+      if (error) {
+        console.error(`Failed to save admin ${email}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('saveAdminsData error:', error);
+  }
 }
 
-// ===== Events Data Store (JSON file) =====
-export function getEventsData(): any[] {
+// ===== Events Data Store (Supabase) =====
+export async function getEventsData(): Promise<any[]> {
   try {
-    const dir = getDataDir();
-    const filePath = path.join(dir, 'events.json');
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, 'utf-8');
-      return JSON.parse(data);
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Failed to fetch events from Supabase:', error);
+      return [];
     }
-    const projectFile = path.join(process.cwd(), 'data', 'events.json');
-    if (fs.existsSync(projectFile)) {
-      const data = fs.readFileSync(projectFile, 'utf-8');
-      const parsed = JSON.parse(data);
-      fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2));
-      return parsed;
-    }
-    return [];
-  } catch {
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      date: row.date,
+      description: row.description,
+      location: row.location,
+      type: row.type,
+    }));
+  } catch (error) {
+    console.error('getEventsData error:', error);
     return [];
   }
 }
 
-export function saveEventsData(events: any[]): void {
-  const dir = getDataDir();
-  fs.writeFileSync(path.join(dir, 'events.json'), JSON.stringify(events, null, 2));
+export async function saveEventsData(events: any[]): Promise<void> {
+  try {
+    // Delete all existing events and re-insert
+    await supabase.from('events').delete().neq('id', '___never___');
+
+    if (events.length > 0) {
+      const rows = events.map((evt: any) => ({
+        id: evt.id,
+        title: evt.title || '',
+        date: evt.date || '',
+        description: evt.description || '',
+        location: evt.location || '',
+        type: evt.type || '',
+      }));
+
+      const { error } = await supabase.from('events').insert(rows);
+      if (error) {
+        console.error('Failed to save events:', error);
+      }
+    }
+  } catch (error) {
+    console.error('saveEventsData error:', error);
+  }
 }
