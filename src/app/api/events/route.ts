@@ -4,7 +4,7 @@ import { verifyToken, getAdminsData, getEventsData, saveEventsData } from '@/lib
 // GET: List all events (public)
 export async function GET() {
   try {
-    const events = getEventsData();
+    const events = await getEventsData();
     return NextResponse.json(events);
   } catch (error) {
     console.error('Get events error:', error);
@@ -21,13 +21,13 @@ export async function POST(req: NextRequest) {
     const payload = await verifyToken(token);
     if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const admins = getAdminsData();
+    const admins = await getAdminsData();
     if (!admins[payload.email.toLowerCase()]) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const eventData = await req.json();
-    const events = getEventsData();
+    const events = await getEventsData();
 
     const newEvent = {
       id: 'evt-' + Date.now(),
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     };
 
     events.push(newEvent);
-    saveEventsData(events);
+    await saveEventsData(events);
 
     return NextResponse.json({ success: true, event: newEvent });
   } catch (error) {
