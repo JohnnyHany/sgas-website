@@ -53,6 +53,7 @@ const teamMembers: TeamMember[] = [
     university: "cairo",
     image: "/team-ganna.png",
     icon: Users,
+    email: "hossamganna3@gmail.com",
   },
   {
     nameEn: "Ahmed Fahmy",
@@ -236,16 +237,17 @@ export default function TeamSection() {
                 </span>
 
                 {/* Photo or Initials */}
-                <div className="relative w-24 h-24 mx-auto mb-4">
+                <div className="w-24 h-24 mx-auto mb-5">
                   {member.image ? (
                     <Image
                       src={member.image}
                       alt={member.nameEn}
-                      fill
-                      className="rounded-full object-cover group-hover:scale-105 transition-transform duration-300 shadow-lg"
+                      width={96}
+                      height={96}
+                      className="rounded-full object-cover shadow-lg"
                     />
                   ) : (
-                    <div className={`w-24 h-24 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300`}>
+                    <div className="w-24 h-24 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center shadow-lg">
                       <IconComp className="h-10 w-10" />
                     </div>
                   )}

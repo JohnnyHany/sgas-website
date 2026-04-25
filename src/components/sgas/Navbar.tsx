@@ -138,9 +138,9 @@ export default function Navbar() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          {/* Menu Panel */}
+          {/* Menu Panel - fixed white background */}
           <div
-            className={`absolute top-0 w-72 h-full bg-white shadow-2xl transition-transform duration-300 ${
+            className={`fixed top-16 bottom-0 w-72 bg-white shadow-2xl overflow-y-auto ${
               lang === "ar" ? "right-0" : "left-0"
             }`}
           >
