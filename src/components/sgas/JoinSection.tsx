@@ -102,7 +102,7 @@ export default function JoinSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-6 rounded-xl font-bold transition-all duration-300"
+                className="border-2 border-white text-white bg-white/15 hover:bg-white/25 px-8 py-6 rounded-xl font-bold transition-all duration-300"
                 asChild
               >
                 <a href="mailto:SGAS.hub@gmail.com">
