@@ -50,6 +50,36 @@ const emptyForm: Omit<SGASEvent, 'id'> = {
   highlights: [],
 };
 
+const monthsEn = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+];
+
+const monthsAr = [
+  'يناير','فبراير','مارس','أبريل','مايو','يونيو',
+  'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'
+];
+
+function toArabicNums(num: number | string): string {
+  const arabicDigits = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  return num.toString().replace(/\d/g, (d) => arabicDigits[parseInt(d)]);
+}
+
+function buildDateEn(day: string, month: string, year: string): string {
+  return `${month} ${day}, ${year}`;
+}
+
+function buildDateAr(day: string, monthIdx: number, year: string): string {
+  return `${toArabicNums(day)} ${monthsAr[monthIdx]} ${toArabicNums(year)}`;
+}
+
+function parseDateFromForm(dateEn: string): { day: string; monthIdx: number; year: string } {
+  const match = dateEn.match(/^(\w+)\s+(\d+),?\s*(\d+)$/);
+  if (!match) return { day: '1', monthIdx: 0, year: new Date().getFullYear().toString() };
+  const monthIdx = monthsEn.indexOf(match[1]);
+  return { day: match[2], monthIdx: monthIdx >= 0 ? monthIdx : 0, year: match[3] };
+}
+
 export default function AdminPage() {
   const { admin, loading: adminLoading } = useAdmin();
   const router = useRouter();
@@ -62,6 +92,16 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
+
+  // Date picker state
+  const [selDay, setSelDay] = useState('1');
+  const [selMonth, setSelMonth] = useState('0');
+  const [selYear, setSelYear] = useState(new Date().getFullYear().toString());
+
+  // Time picker state
+  const [selHour, setSelHour] = useState('6');
+  const [selMinute, setSelMinute] = useState('00');
+  const [selAmPm, setSelAmPm] = useState<'AM' | 'PM'>('PM');
 
   useEffect(() => {
     if (!adminLoading && !admin) {
@@ -95,6 +135,12 @@ export default function AdminPage() {
     setFormData(emptyForm);
     setHighlightsText('');
     setFormError('');
+    setSelDay('1');
+    setSelMonth('0');
+    setSelYear(new Date().getFullYear().toString());
+    setSelHour('6');
+    setSelMinute('00');
+    setSelAmPm('PM');
     setShowForm(true);
   };
 
@@ -103,6 +149,25 @@ export default function AdminPage() {
     setFormData({ ...event });
     setHighlightsText(event.highlights.join(', '));
     setFormError('');
+
+    // Parse date
+    const parsed = parseDateFromForm(event.dateEn);
+    setSelDay(parsed.day);
+    setSelMonth(parsed.monthIdx.toString());
+    setSelYear(parsed.year);
+
+    // Parse time
+    const timeMatch = event.time?.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (timeMatch) {
+      setSelHour(timeMatch[1]);
+      setSelMinute(timeMatch[2]);
+      setSelAmPm(timeMatch[3].toUpperCase() as 'AM' | 'PM');
+    } else {
+      setSelHour('6');
+      setSelMinute('00');
+      setSelAmPm('PM');
+    }
+
     setShowForm(true);
   };
 
@@ -117,6 +182,7 @@ export default function AdminPage() {
     try {
       const eventData = {
         ...formData,
+        time: `${selHour}:${selMinute} ${selAmPm}`,
         highlights: highlightsText.split(',').map(h => h.trim()).filter(Boolean),
       };
 
@@ -159,6 +225,14 @@ export default function AdminPage() {
     }
   };
 
+  // Update dateEn and dateAr when picker changes
+  useEffect(() => {
+    const monthIdx = parseInt(selMonth, 10);
+    const dateEn = buildDateEn(selDay, monthsEn[monthIdx], selYear);
+    const dateAr = buildDateAr(selDay, monthIdx, selYear);
+    setFormData(prev => ({ ...prev, dateEn, dateAr }));
+  }, [selDay, selMonth, selYear]);
+
   if (adminLoading || !admin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -166,6 +240,9 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  const currentYear = new Date().getFullYear();
+  const daysInMonth = new Date(parseInt(selYear), parseInt(selMonth) + 1, 0).getDate();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -369,38 +446,108 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date (English)</label>
-                  <input
-                    value={formData.dateEn}
-                    onChange={(e) => setFormData((p) => ({ ...p, dateEn: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm"
-                    placeholder="April 2026"
-                  />
+              {/* Date Picker */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-brand-500" />
+                    Date
+                  </span>
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* Day */}
+                  <select
+                    value={selDay}
+                    onChange={(e) => {
+                      const day = parseInt(e.target.value, 10);
+                      if (day <= daysInMonth) setSelDay(e.target.value);
+                    }}
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white"
+                  >
+                    {Array.from({ length: 31 }, (_, i) => {
+                      const d = (i + 1).toString();
+                      return (
+                        <option key={d} value={d} disabled={i + 1 > daysInMonth}>
+                          {d}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  {/* Month */}
+                  <select
+                    value={selMonth}
+                    onChange={(e) => {
+                      setSelMonth(e.target.value);
+                      const newMonthIdx = parseInt(e.target.value, 10);
+                      const maxDays = new Date(parseInt(selYear), newMonthIdx + 1, 0).getDate();
+                      if (parseInt(selDay, 10) > maxDays) setSelDay(maxDays.toString());
+                    }}
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white"
+                  >
+                    {monthsEn.map((m, i) => (
+                      <option key={i} value={i}>{m}</option>
+                    ))}
+                  </select>
+
+                  {/* Year */}
+                  <select
+                    value={selYear}
+                    onChange={(e) => {
+                      setSelYear(e.target.value);
+                      const newMaxDays = new Date(parseInt(e.target.value), parseInt(selMonth) + 1, 0).getDate();
+                      if (parseInt(selDay, 10) > newMaxDays) setSelDay(newMaxDays.toString());
+                    }}
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white"
+                  >
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const y = (currentYear - 2 + i).toString();
+                      return <option key={y} value={y}>{y}</option>;
+                    })}
+                  </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date (Arabic)</label>
-                  <input
-                    value={formData.dateAr}
-                    onChange={(e) => setFormData((p) => ({ ...p, dateAr: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm"
-                    dir="rtl"
-                    placeholder="أبريل 2026"
-                  />
-                </div>
+                <p className="text-xs text-gray-400 mt-1.5">
+                  EN: {formData.dateEn} &nbsp;|&nbsp; AR: {formData.dateAr}
+                </p>
               </div>
 
-              {/* Time */}
+              {/* Time Picker */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                <input
-                  value={formData.time}
-                  onChange={(e) => setFormData((p) => ({ ...p, time: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm"
-                  placeholder="10:00 AM - 2:00 PM"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* Hour */}
+                  <select
+                    value={selHour}
+                    onChange={(e) => setSelHour(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const h = (i + 1).toString();
+                      return <option key={h} value={h}>{h}</option>;
+                    })}
+                  </select>
+
+                  {/* Minute */}
+                  <select
+                    value={selMinute}
+                    onChange={(e) => setSelMinute(e.target.value)}
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white"
+                  >
+                    {['00','05','10','15','20','25','30','35','40','45','50','55'].map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+
+                  {/* AM/PM */}
+                  <select
+                    value={selAmPm}
+                    onChange={(e) => setSelAmPm(e.target.value as 'AM' | 'PM')}
+                    className="px-3 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white"
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
               </div>
 
               {/* Locations */}
