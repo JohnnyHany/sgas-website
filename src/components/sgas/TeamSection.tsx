@@ -104,8 +104,8 @@ const teamMembers: TeamMember[] = [
     email: "mbdalkafy19@gmail.com",
   },
   {
-    nameEn: "Salma Mohamed",
-    nameAr: "سلمى محمد",
+    nameEn: "Salma Mahmoud",
+    nameAr: "سلمى محمود",
     roleEn: "Ain Shams University Ambassador",
     roleAr: "سفيرة جامعة عين شمس",
     bioEn: "The official SGAS ambassador at Ain Shams University. Responsible for representing SGAS, coordinating activities, and expanding the community at Ain Shams.",
