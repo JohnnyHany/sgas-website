@@ -15,6 +15,8 @@ import {
   Briefcase,
   Pencil,
   X,
+  ArrowUpDown,
+  Filter,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -45,6 +47,19 @@ const typeConfigMap: Record<string, {
   competition: { icon: Trophy, en: "Competition", ar: "مسابقة", color: "bg-amber-100 text-amber-700 border-amber-200" },
   networking: { icon: Briefcase, en: "Networking", ar: "تواصل مهني", color: "bg-leaf-100 text-leaf-700 border-leaf-200" },
 };
+
+function parseDate(event: SGASEvent): Date {
+  const dateStr = event.dateEn;
+  const parts = dateStr.split(" ");
+  const months: Record<string, number> = {
+    January: 0, February: 1, March: 2, April: 3, May: 4, June: 5,
+    July: 6, August: 7, September: 8, October: 9, November: 10, December: 11,
+  };
+  const month = months[parts[0]] ?? 0;
+  const day = parseInt(parts[1]?.replace(",", "") || "1", 10);
+  const year = parseInt(parts[2] || new Date().getFullYear().toString(), 10);
+  return new Date(year, month, day);
+}
 
 function EventModal({ event, lang, onClose }: { event: SGASEvent; lang: "en" | "ar"; onClose: () => void }) {
   const config = typeConfigMap[event.type] || typeConfigMap.networking;
@@ -143,6 +158,61 @@ function EventModal({ event, lang, onClose }: { event: SGASEvent; lang: "en" | "
   );
 }
 
+function EventFilters({
+  lang,
+  sortDir,
+  setSortDir,
+  filterType,
+  setFilterType,
+}: {
+  lang: "en" | "ar";
+  sortDir: "newest" | "oldest";
+  setSortDir: (d: "newest" | "oldest") => void;
+  filterType: string;
+  setFilterType: (t: string) => void;
+}) {
+  const types = [
+    { key: "all", en: "All", ar: "الكل" },
+    { key: "workshop", en: "Workshop", ar: "ورشة عمل" },
+    { key: "seminar", en: "Seminar", ar: "محاضرة" },
+    { key: "competition", en: "Competition", ar: "مسابقة" },
+    { key: "networking", en: "Networking", ar: "تواصل مهني" },
+  ];
+
+  return (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+      {/* Sort button */}
+      <button
+        onClick={() => setSortDir(sortDir === "newest" ? "oldest" : "newest")}
+        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-brand-300 hover:text-brand-700 transition-all"
+      >
+        <ArrowUpDown className="h-4 w-4" />
+        {sortDir === "newest"
+          ? (lang === "en" ? "Newest First" : "الأحدث أولاً")
+          : (lang === "en" ? "Oldest First" : "الأقدم أولاً")}
+      </button>
+
+      {/* Type filters */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="h-4 w-4 text-gray-400" />
+        {types.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setFilterType(t.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              filterType === t.key
+                ? "bg-brand-700 text-white shadow-sm"
+                : "bg-white border border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-600"
+            }`}
+          >
+            {lang === "en" ? t.en : t.ar}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function EventsSection() {
   const { lang } = useLang();
   const { isAdmin } = useAdmin();
@@ -150,6 +220,14 @@ export default function EventsSection() {
   const [events, setEvents] = useState<SGASEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<SGASEvent | null>(null);
+
+  // Upcoming filters
+  const [upcomingSort, setUpcomingSort] = useState<"newest" | "oldest">("newest");
+  const [upcomingType, setUpcomingType] = useState<string>("all");
+
+  // Past filters
+  const [pastSort, setPastSort] = useState<"newest" | "oldest">("newest");
+  const [pastType, setPastType] = useState<string>("all");
 
   useEffect(() => {
     fetch("/api/events")
@@ -161,8 +239,35 @@ export default function EventsSection() {
       .finally(() => setLoading(false));
   }, []);
 
-  const pastEvents = events.filter((e) => e.status === "past");
-  const upcomingEvents = events.filter((e) => e.status === "upcoming");
+  const applyFilters = (
+    list: SGASEvent[],
+    sortDir: "newest" | "oldest",
+    filterType: string
+  ) => {
+    let filtered = filterType === "all"
+      ? [...list]
+      : list.filter((e) => e.type === filterType);
+
+    filtered.sort((a, b) => {
+      const da = parseDate(a).getTime();
+      const db = parseDate(b).getTime();
+      return sortDir === "newest" ? db - da : da - db;
+    });
+
+    return filtered;
+  };
+
+  const upcomingEvents = applyFilters(
+    events.filter((e) => e.status === "upcoming"),
+    upcomingSort,
+    upcomingType
+  );
+
+  const pastEvents = applyFilters(
+    events.filter((e) => e.status === "past"),
+    pastSort,
+    pastType
+  );
 
   const renderEventCard = (event: SGASEvent) => {
     const config = typeConfigMap[event.type] || typeConfigMap.networking;
@@ -240,28 +345,54 @@ export default function EventsSection() {
         )}
 
         {/* Upcoming Events */}
-        {!loading && upcomingEvents.length > 0 && (
+        {!loading && events.filter((e) => e.status === "upcoming").length > 0 && (
           <div className="mb-12">
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-6">
               <span className="w-3 h-3 rounded-full bg-green-500" />
               <h3 className="text-2xl font-bold text-gray-900">{ev.upcoming[lang]}</h3>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {upcomingEvents.map(renderEventCard)}
-            </div>
+            <EventFilters
+              lang={lang}
+              sortDir={upcomingSort}
+              setSortDir={setUpcomingSort}
+              filterType={upcomingType}
+              setFilterType={setUpcomingType}
+            />
+            {upcomingEvents.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {upcomingEvents.map(renderEventCard)}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400 text-sm">
+                {lang === "en" ? "No matching events." : "لا توجد فعاليات مطابقة."}
+              </div>
+            )}
           </div>
         )}
 
         {/* Past Events */}
-        {!loading && pastEvents.length > 0 && (
+        {!loading && events.filter((e) => e.status === "past").length > 0 && (
           <div>
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-6">
               <span className="w-3 h-3 rounded-full bg-gray-400" />
               <h3 className="text-2xl font-bold text-gray-900">{ev.past[lang]}</h3>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {pastEvents.map(renderEventCard)}
-            </div>
+            <EventFilters
+              lang={lang}
+              sortDir={pastSort}
+              setSortDir={setPastSort}
+              filterType={pastType}
+              setFilterType={setPastType}
+            />
+            {pastEvents.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {pastEvents.map(renderEventCard)}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400 text-sm">
+                {lang === "en" ? "No matching events." : "لا توجد فعاليات مطابقة."}
+              </div>
+            )}
           </div>
         )}
 
