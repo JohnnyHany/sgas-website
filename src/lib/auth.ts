@@ -126,11 +126,18 @@ export async function getEventsData(): Promise<any[]> {
 
     return (data || []).map((row: any) => ({
       id: row.id,
-      title: row.title,
-      date: row.date,
-      description: row.description,
-      location: row.location,
+      titleEn: row.title_en,
+      titleAr: row.title_ar,
       type: row.type,
+      dateEn: row.date_en,
+      dateAr: row.date_ar,
+      time: row.time,
+      locationEn: row.location_en,
+      locationAr: row.location_ar,
+      descEn: row.desc_en,
+      descAr: row.desc_ar,
+      status: row.status,
+      highlights: row.highlights || [],
     }));
   } catch (error) {
     console.error('getEventsData error:', error);
@@ -140,17 +147,23 @@ export async function getEventsData(): Promise<any[]> {
 
 export async function saveEventsData(events: any[]): Promise<void> {
   try {
-    // Delete all existing events and re-insert
     await supabase.from('events').delete().neq('id', '___never___');
 
     if (events.length > 0) {
       const rows = events.map((evt: any) => ({
         id: evt.id,
-        title: evt.title || '',
-        date: evt.date || '',
-        description: evt.description || '',
-        location: evt.location || '',
-        type: evt.type || '',
+        title_en: evt.titleEn || '',
+        title_ar: evt.titleAr || '',
+        type: evt.type || 'workshop',
+        date_en: evt.dateEn || '',
+        date_ar: evt.dateAr || '',
+        time: evt.time || '',
+        location_en: evt.locationEn || '',
+        location_ar: evt.locationAr || '',
+        desc_en: evt.descEn || '',
+        desc_ar: evt.descAr || '',
+        status: evt.status || 'past',
+        highlights: evt.highlights || [],
       }));
 
       const { error } = await supabase.from('events').insert(rows);
