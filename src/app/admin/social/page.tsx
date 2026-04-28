@@ -86,7 +86,7 @@ export default function SocialMediaPage() {
       const res = await fetch('/api/social/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: selectedIdea?.title || topic, platform, language }),
+        body: JSON.stringify({ topic: selectedIdea?.title || topic, caption, platform, language }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
