@@ -11,121 +11,80 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Topic is required' }, { status: 400 });
     }
 
-    // Extract poster text from the caption
+    const apiKey = process.env.TOGETHER_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'TOGETHER_API_KEY is not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Extract poster text from caption
     const content = extractPosterContent(caption, topic);
-    const esc = escapeXml;
+
+    // Generate high-quality background with FLUX.1-schnell (FREE model)
+    const bgPrompt = `Clean elegant social media post background for "${content.title}". Soft off-white cream base color with subtle decorative elements in SGAS brand colors: pomegranate red (#B71C1C), navy blue (#0D47A1), and forest green (#2E7D32). Minimalist geometric shapes, faint abstract curves, professional university organization aesthetic. Leave the center and bottom half clean for text overlay. NO text, NO words, NO letters. Square format.`;
+
+    const imgResponse = await fetch('https://api.together.xyz/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'black-forest-labs/FLUX.1-schnell',
+        prompt: bgPrompt,
+        width: 1024,
+        height: 1024,
+        n: 1,
+        response_format: 'b64_json',
+      }),
+    });
+
+    if (!imgResponse.ok) {
+      const errText = await imgResponse.text();
+      console.error('Together API error:', errText);
+      throw new Error('Failed to generate image');
+    }
+
+    const imgData = await imgResponse.json();
+    const imageBase64 = imgData.data?.[0]?.b64_json;
+    if (!imageBase64) throw new Error('No image data received');
+
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
+
+    // Resize to 1080x1080 (Instagram standard)
+    const background = await sharp(imageBuffer)
+      .resize(1080, 1080, { fit: 'cover' })
+      .png()
+      .toBuffer();
+
+    // Build SVG text overlay
+    const svgOverlay = buildPosterSVG(content);
 
     // Load logo
     const logoPath = path.join(process.cwd(), 'public', 'sgas-logo.png');
-    let logoBase64 = '';
-    let logoWidth = 80;
-    let logoHeight = 80;
+    const composites: any[] = [
+      { input: Buffer.from(svgOverlay) }
+    ];
 
     if (fs.existsSync(logoPath)) {
-      logoBase64 = fs.readFileSync(logoPath).toString('base64');
-      const meta = await sharp(logoPath).metadata();
-      if (meta.width && meta.height) {
-        logoWidth = meta.width;
-        logoHeight = meta.height;
-      }
+      const logoBuffer = fs.readFileSync(logoPath);
+      const logoSize = 110;
+      composites.push({
+        input: await sharp(logoBuffer)
+          .resize(logoSize, logoSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+          .png()
+          .toBuffer(),
+        top: 1080 - logoSize - 30,
+        left: 1080 - logoSize - 30,
+      });
     }
 
-    // Build the entire poster as SVG
-    const W = 1080;
-    const svg = `
-<svg width="${W}" height="${W}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="accentBar" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#B71C1C"/>
-      <stop offset="50%" stop-color="#8B0000"/>
-      <stop offset="100%" stop-color="#0D47A1"/>
-    </linearGradient>
-    <linearGradient id="shapeGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#B71C1C" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#0D47A1" stop-opacity="0.08"/>
-    </linearGradient>
-  </defs>
-
-  <!-- ─── Background: off-white cream ─── -->
-  <rect width="${W}" height="${W}" fill="#FAFAF8"/>
-
-  <!-- ─── Subtle geometric shapes (like reference) ─── -->
-  <rect x="0" y="0" width="280" height="280" rx="0" fill="#B71C1C" opacity="0.08"/>
-  <rect x="0" y="280" width="160" height="160" rx="0" fill="#0D47A1" opacity="0.06"/>
-  <rect x="${W - 200}" y="${W - 200}" width="200" height="200" rx="0" fill="#2E7D32" opacity="0.06"/>
-  <rect x="${W - 350}" y="${W - 100}" width="150" height="100" rx="0" fill="#B71C1C" opacity="0.05"/>
-
-  <!-- ─── Thin decorative lines ─── -->
-  <line x1="60" y1="120" x2="${W - 60}" y2="120" stroke="#E0E0E0" stroke-width="1"/>
-  <line x1="60" y1="${W - 140}" x2="${W - 60}" y2="${W - 140}" stroke="#E0E0E0" stroke-width="1"/>
-
-  ${logoBase64 ? `
-  <!-- ─── SGAS Logo (top-right) ─── -->
-  <image href="data:image/png;base64,${logoBase64}" 
-         x="${W - 180}" y="40" width="120" height="120" 
-         preserveAspectRatio="xMidYMid meet"/>
-  ` : ''}
-
-  <!-- ─── SGAS text next to logo ─── -->
-  <text x="${W - 195}" y="75"
-        font-family="'Helvetica Neue', 'Arial', sans-serif"
-        font-size="14" fill="#666666"
-        text-anchor="end" letter-spacing="3" font-weight="500">
-    STUDENT GROUP OF
-  </text>
-  <text x="${W - 195}" y="100"
-        font-family="'Helvetica Neue', 'Arial', sans-serif"
-        font-size="18" fill="#0D47A1"
-        text-anchor="end" letter-spacing="2" font-weight="700">
-    ACTUARIAL SCIENCE
-  </text>
-  <text x="${W - 195}" y="120"
-        font-family="'Helvetica Neue', 'Arial', sans-serif"
-        font-size="12" fill="#999999"
-        text-anchor="end" letter-spacing="2">
-    CAIRO UNIVERSITY
-  </text>
-
-  <!-- ─── Accent color bar ─── -->
-  <rect x="80" y="520" width="100" height="6" rx="3" fill="url(#accentBar)"/>
-
-  <!-- ─── Main Title ─── -->
-  <text x="80" y="590"
-        font-family="'Georgia', 'Times New Roman', serif"
-        font-size="62" font-weight="bold" fill="#1A1A1A"
-        text-anchor="start">
-    ${esc(content.title)}
-  </text>
-
-  <!-- ─── Body lines ─── -->
-  ${content.lines.map((line, i) => `
-  <text x="80" y="${660 + i * 52}"
-        font-family="'Helvetica Neue', 'Arial', sans-serif"
-        font-size="26" fill="#555555"
-        text-anchor="start" font-weight="400">
-    ${esc(line)}
-  </text>`).join('')}
-
-  <!-- ─── Bottom accent shapes (like reference) ─── -->
-  <rect x="60" y="${W - 120}" width="50" height="50" rx="4" fill="#B71C1C" opacity="0.7"/>
-  <rect x="120" y="${W - 120}" width="35" height="35" rx="4" fill="#0D47A1" opacity="0.5"/>
-  <rect x="165" y="${W - 120}" width="20" height="20" rx="4" fill="#2E7D32" opacity="0.6"/>
-
-  <!-- ─── Footer line ─── -->
-  <rect x="60" y="${W - 60}" width="${W - 120}" height="1" fill="#E0E0E0"/>
-
-  <!-- ─── Footer text ─── -->
-  <text x="80" y="${W - 30}"
-        font-family="'Helvetica Neue', 'Arial', sans-serif"
-        font-size="14" fill="#AAAAAA"
-        text-anchor="start" letter-spacing="2">
-    SGAS  ·  @SGAS.CU
-  </text>
-</svg>`;
-
-    // Render SVG to PNG using sharp
-    const finalBuffer = await sharp(Buffer.from(svg))
-      .resize(1080, 1080)
+    // Composite everything
+    const finalBuffer = await sharp(background)
+      .composite(composites)
       .png()
       .toBuffer();
 
@@ -143,11 +102,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ─── Extract content from caption ───
+// ─── Extract poster text from caption ───
 function extractPosterContent(caption: string, topic: string) {
-  if (!caption) {
-    return { title: topic, lines: [] };
-  }
+  if (!caption) return { title: topic, lines: [] };
 
   const cleaned = caption
     .replace(/#\w+/g, '')
@@ -167,6 +124,64 @@ function extractPosterContent(caption: string, topic: string) {
     .map(l => l.length > 55 ? l.substring(0, 52) + '...' : l);
 
   return { title, lines: bodyLines };
+}
+
+// ─── Build SVG poster overlay ───
+function buildPosterSVG(content: { title: string; lines: string[] }): string {
+  const W = 1080;
+  const esc = escapeXml;
+  const titleY = 680;
+  const bodyStartY = titleY + 75;
+  const lineSpacing = 42;
+
+  return `<svg width="${W}" height="${W}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0)" />
+      <stop offset="40%" stop-color="rgba(255,255,255,0)" />
+      <stop offset="75%" stop-color="rgba(255,255,255,0.3)" />
+      <stop offset="100%" stop-color="rgba(0,0,0,0.7)" />
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#B71C1C" />
+      <stop offset="50%" stop-color="#8B0000" />
+      <stop offset="100%" stop-color="#0D47A1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.6)" />
+    </filter>
+  </defs>
+
+  <!-- Bottom dark gradient for text readability -->
+  <rect width="${W}" height="${W}" fill="url(#fade)" />
+
+  <!-- Brand color accent bar -->
+  <rect x="80" y="${titleY - 30}" width="180" height="5" rx="3" fill="url(#bar)" />
+
+  <!-- Title -->
+  <text x="80" y="${titleY}"
+        font-family="'Georgia', 'Times New Roman', serif"
+        font-size="54" font-weight="bold" fill="white"
+        text-anchor="start" filter="url(#shadow)">
+    ${esc(content.title)}
+  </text>
+
+  ${content.lines.map((line, i) => `
+  <text x="80" y="${bodyStartY + i * lineSpacing}"
+        font-family="'Helvetica Neue', 'Arial', sans-serif"
+        font-size="26" fill="rgba(255,255,255,0.9)"
+        text-anchor="start">
+    ${esc(line)}
+  </text>`).join('')}
+
+  <!-- Branding -->
+  <text x="80" y="${W - 45}"
+        font-family="'Helvetica Neue', 'Arial', sans-serif"
+        font-size="16" fill="rgba(255,255,255,0.4)"
+        text-anchor="start" letter-spacing="3">
+    SGAS  ·  CAIRO UNIVERSITY
+  </text>
+</svg>`;
 }
 
 function escapeXml(str: string): string {
