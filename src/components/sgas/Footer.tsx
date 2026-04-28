@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Linkedin, MessageCircle, Mail, Heart } from "lucide-react";
+import { Linkedin, Instagram, MessageCircle, Mail, Heart } from "lucide-react";
 import { useLang } from "@/components/sgas/LanguageProvider";
 import { useAdmin } from "@/components/sgas/AdminProvider";
 import { translations } from "@/lib/i18n";
@@ -16,7 +16,9 @@ export default function Footer() {
   return (
     <footer className="bg-brand-950 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main Footer */}
         <div className="py-12 sm:py-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
+          {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="relative w-10 h-10 rounded-xl overflow-hidden">
@@ -34,6 +36,7 @@ export default function Footer() {
             </p>
           </div>
 
+          {/* Quick Links */}
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
               {f.quickLinks[lang]}
@@ -58,6 +61,7 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Universities */}
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
               {f.ourUniversities[lang]}
@@ -69,11 +73,12 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2 text-brand-300 text-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-brand-400" />
-                {lang === "en" ? "Ain Shams University" : "جامعة عين شمس"} - {lang === "en" ? "Faculty of Science" : "كلية العلوم"}
+                {lang === "en" ? "Ain Shams University" : "جامعة عين شمس"} - {lang === "en" ? "Faculty of Science (Girls' Campus)" : "كلية العلوم (حرم البنات)"}
               </li>
             </ul>
           </div>
 
+          {/* Contact */}
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
               {f.contactUs[lang]}
@@ -101,6 +106,17 @@ export default function Footer() {
               </li>
               <li>
                 <a
+                  href="https://www.instagram.com/sgas.cu"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-brand-300 hover:text-white transition-colors text-sm"
+                >
+                  <Instagram className="h-4 w-4" />
+                  @sgas.cu - Instagram
+                </a>
+              </li>
+              <li>
+                <a
                   href="https://chat.whatsapp.com/GFwGss82nOQKnsHn6l88vE"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -114,6 +130,7 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Bottom Bar */}
         <div className="py-6 border-t border-brand-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-brand-400">
             {f.copyright[lang](new Date().getFullYear().toString())}
