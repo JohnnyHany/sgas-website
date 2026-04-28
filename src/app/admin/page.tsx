@@ -261,6 +261,13 @@ export default function AdminPage() {
             </div>
             <div className="flex items-center gap-2">
               <Link
+                href="/admin/social"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors font-medium"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">AI Social</span>
+              </Link>
+              <Link
                 href="/"
                 className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
               >
