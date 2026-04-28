@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
 
+async function createZAI() {
+  const baseUrl = process.env.AI_BASE_URL;
+  const apiKey = process.env.AI_API_KEY;
+  if (!baseUrl || !apiKey) {
+    throw new Error('AI configuration is missing. Please set AI_BASE_URL and AI_API_KEY environment variables.');
+  }
+  return new ZAI({ baseUrl, apiKey });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { topic, platform, language } = await request.json();
@@ -9,9 +18,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Topic is required' }, { status: 400 });
     }
 
-    const zai = await ZAI.create();
+    const zai = await createZAI();
 
-    // Build a detailed image prompt based on platform
     const imagePrompt = `Create a professional and visually appealing social media post image for ${platform || 'instagram'}.
     
 Topic/Theme: ${topic}
