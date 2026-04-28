@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
 
-async function createZAI() {
-  const baseUrl = process.env.AI_BASE_URL;
-  const apiKey = process.env.AI_API_KEY;
-  if (!baseUrl || !apiKey) {
-    throw new Error('AI configuration is missing. Please set AI_BASE_URL and AI_API_KEY environment variables.');
+async function callAI(messages: any[], temperature = 0.8) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      temperature,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Groq API error: ${err}`);
   }
-  return new ZAI({ baseUrl, apiKey });
+  const data = await res.json();
+  return data.choices[0]?.message?.content || '';
 }
 
 export async function POST(request: NextRequest) {
@@ -17,8 +28,6 @@ export async function POST(request: NextRequest) {
     if (!action) {
       return NextResponse.json({ error: 'Action is required' }, { status: 400 });
     }
-
-    const zai = await createZAI();
 
     const systemPrompt = `You are a social media content expert for SGAS (Student Group of Actuarial Science) at Cairo University. You create engaging content for university students interested in actuarial science, insurance, risk management, and data science. Always write in ${language || 'arabic'}. Be creative, professional but friendly, and use relevant emojis.`;
 
@@ -41,16 +50,11 @@ Return ONLY a valid JSON array of 3 objects with this exact format:
 
 Do NOT include any text outside the JSON array.`;
 
-      const completion = await zai.chat.completions.create({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.8,
-      });
+      const content = await callAI([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]);
 
-      const content = completion.choices[0]?.message?.content || '';
-      
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         return NextResponse.json({ error: 'Failed to parse ideas' }, { status: 500 });
@@ -81,16 +85,11 @@ Return ONLY a valid JSON object with this exact format:
 
 Do NOT include any text outside the JSON object.`;
 
-      const completion = await zai.chat.completions.create({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-      });
+      const content = await callAI([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ], 0.7);
 
-      const content = completion.choices[0]?.message?.content || '';
-      
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         return NextResponse.json({ error: 'Failed to parse caption' }, { status: 500 });
