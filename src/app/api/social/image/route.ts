@@ -11,12 +11,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Topic is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.TOGETHER_API_KEY;
-
-    // Check 1: API key missing?
+    const apiKey = process.env.HF_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'MISSING_KEY: Go to Vercel Settings > Environment Variables and add TOGETHER_API_KEY' },
+        { error: 'MISSING_KEY: Add HF_API_KEY in Vercel Environment Variables' },
         { status: 500 }
       );
     }
@@ -25,48 +23,44 @@ export async function POST(request: NextRequest) {
 
     const bgPrompt = `Clean elegant social media post background. Soft off-white cream base with subtle decorative elements in pomegranate red, navy blue, and forest green. Minimalist geometric shapes, professional university aesthetic. NO text NO words NO letters. Square format.`;
 
-    // Check 2: Call Together API
-    const imgResponse = await fetch('https://api.together.xyz/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'black-forest-labs/FLUX.1-schnell',
-        prompt: bgPrompt,
-        width: 1024,
-        height: 1024,
-        n: 1,
-        response_format: 'b64_json',
-      }),
-    });
-
-    // Check 3: API returned error?
-    if (!imgResponse.ok) {
-      const errBody = await imgResponse.text();
-      let errorMsg = `API_ERROR: Status ${imgResponse.status}`;
-      try {
-        const errJson = JSON.parse(errBody);
-        errorMsg = `API_ERROR: ${errJson.error?.message || errJson.message || JSON.stringify(errJson)}`;
-      } catch {
-        errorMsg = `API_ERROR: ${errBody.substring(0, 200)}`;
+    // Call Hugging Face Inference API (FREE, uses FLUX.1-schnell)
+    const imgResponse = await fetch(
+      'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          inputs: bgPrompt,
+          parameters: {
+            width: 1024,
+            height: 1024,
+          },
+        }),
       }
-      return NextResponse.json({ error: errorMsg }, { status: 500 });
+    );
+
+    // If HF returns 503, model is loading - retry after few seconds
+    if (imgResponse.status === 503) {
+      const retryAfter = imgResponse.headers.get('retry-after') || '20';
+      return NextResponse.json(
+        { error: `MODEL_LOADING: Please wait ${retryAfter} seconds and try again. The model is waking up.` },
+        { status: 503 }
+      );
     }
 
-    const imgData = await imgResponse.json();
-
-    // Check 4: No image in response?
-    const imageBase64 = imgData.data?.[0]?.b64_json;
-    if (!imageBase64) {
+    if (!imgResponse.ok) {
+      const errBody = await imgResponse.text();
       return NextResponse.json(
-        { error: `NO_IMAGE: ${JSON.stringify(imgData).substring(0, 200)}` },
+        { error: `HF_ERROR: ${errBody.substring(0, 200)}` },
         { status: 500 }
       );
     }
 
-    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    // HF returns raw image bytes, not JSON
+    const imageBuffer = Buffer.from(await imgResponse.arrayBuffer());
     const background = await sharp(imageBuffer)
       .resize(1080, 1080, { fit: 'cover' })
       .png()
@@ -98,10 +92,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ image: finalBuffer.toString('base64'), success: true });
 
   } catch (error: any) {
-    return NextResponse.json(
-      { error: `CRASH: ${error.message}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `CRASH: ${error.message}` }, { status: 500 });
   }
 }
 
