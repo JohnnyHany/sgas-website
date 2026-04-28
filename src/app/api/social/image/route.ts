@@ -1,14 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
-
-async function createZAI() {
-  const baseUrl = process.env.AI_BASE_URL;
-  const apiKey = process.env.AI_API_KEY;
-  if (!baseUrl || !apiKey) {
-    throw new Error('AI configuration is missing. Please set AI_BASE_URL and AI_API_KEY environment variables.');
-  }
-  return new ZAI({ baseUrl, apiKey });
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,34 +8,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Topic is required' }, { status: 400 });
     }
 
-    const zai = await createZAI();
+    const imagePrompt = `Professional social media post for ${platform || 'instagram'} about: ${topic}. Modern clean design, vibrant blue-purple gradient, university student organization aesthetic, actuarial science symbols, data visualization elements, square format, high quality, no text or words in the image`;
 
-    const imagePrompt = `Create a professional and visually appealing social media post image for ${platform || 'instagram'}.
+    const encodedPrompt = encodeURIComponent(imagePrompt);
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
+
+    // Fetch the image and convert to base64
+    const response = await fetch(imageUrl);
     
-Topic/Theme: ${topic}
-Language context: ${language || 'Arabic'}
-
-Style requirements:
-- Modern, clean design with vibrant colors
-- Professional university/student organization aesthetic
-- Include subtle mathematical/actuarial symbols or data visualization elements
-- Use a gradient background (blue to purple tones)
-- Leave space for text overlay
-- Square format suitable for Instagram
-- High quality, eye-catching design
-
-Do NOT include any actual text or words in the image.`;
-
-    const response = await zai.images.generations.create({
-      prompt: imagePrompt,
-      size: '1024x1024',
-    });
-
-    const imageBase64 = response.data[0]?.base64;
-
-    if (!imageBase64) {
-      return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
+    if (!response.ok) {
+      throw new Error('Failed to generate image');
     }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const imageBase64 = buffer.toString('base64');
 
     return NextResponse.json({
       image: imageBase64,
