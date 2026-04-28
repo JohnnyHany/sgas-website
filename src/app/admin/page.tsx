@@ -8,7 +8,7 @@ import { useAdmin } from '@/components/sgas/AdminProvider';
 import {
   Plus, Pencil, Trash2, LogOut, Calendar, MapPin,
   Video, Trophy, Mic, Briefcase, X, Save,
-  ArrowLeft, Loader2
+  ArrowLeft, Loader2, Sparkles
 } from 'lucide-react';
 
 interface SGASEvent {
