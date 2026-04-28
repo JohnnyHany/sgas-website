@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
 
+async function createZAI() {
+  const baseUrl = process.env.AI_BASE_URL;
+  const apiKey = process.env.AI_API_KEY;
+  if (!baseUrl || !apiKey) {
+    throw new Error('AI configuration is missing. Please set AI_BASE_URL and AI_API_KEY environment variables.');
+  }
+  return new ZAI({ baseUrl, apiKey });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { action, topic, platform, language, selectedIdea } = await request.json();
@@ -9,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Action is required' }, { status: 400 });
     }
 
-    const zai = await ZAI.create();
+    const zai = await createZAI();
 
     const systemPrompt = `You are a social media content expert for SGAS (Student Group of Actuarial Science) at Cairo University. You create engaging content for university students interested in actuarial science, insurance, risk management, and data science. Always write in ${language || 'arabic'}. Be creative, professional but friendly, and use relevant emojis.`;
 
@@ -42,7 +51,6 @@ Do NOT include any text outside the JSON array.`;
 
       const content = completion.choices[0]?.message?.content || '';
       
-      // Extract JSON from the response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         return NextResponse.json({ error: 'Failed to parse ideas' }, { status: 500 });
