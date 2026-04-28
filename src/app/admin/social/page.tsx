@@ -1,242 +1,181 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import {
-  Sparkles,
-  CheckCircle2,
-  XCircle,
-  RefreshCw,
-  Copy,
-  Download,
-  ChevronRight,
-  ArrowLeft,
-  ImageIcon,
-  Type,
-  Eye,
-  Instagram,
-  Linkedin,
-  Languages,
-  Loader2,
-  AlertCircle,
-  Lightbulb,
-} from "lucide-react";
-import { useAdmin } from "@/components/sgas/AdminProvider";
+import { useState } from 'react';
+import Link from 'next/link';
 
-interface PostIdea {
+type Step = 'topic' | 'ideas' | 'caption' | 'image' | 'review';
+
+interface Idea {
+  id: number;
   title: string;
   description: string;
-  platform: string;
   type: string;
-  bestTime: string;
-  language: string;
+  suggestedHashtags: string[];
 }
 
-type Step = "idea" | "caption" | "image" | "review";
-
 export default function SocialMediaPage() {
-  const router = useRouter();
-  const { admin, loading } = useAdmin();
-
-  const [step, setStep] = useState<Step>("idea");
-  const [topic, setTopic] = useState("");
-  const [ideas, setIdeas] = useState<PostIdea[]>([]);
-  const [selectedIdea, setSelectedIdea] = useState<PostIdea | null>(null);
-  const [caption, setCaption] = useState("");
-  const [platform, setPlatform] = useState<"instagram" | "linkedin" | "both">("instagram");
-  const [language, setLanguage] = useState<"en" | "ar" | "both">("en");
-  const [imagePrompt, setImagePrompt] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [loadingStep, setLoadingStep] = useState<string>("");
-  const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  if (!loading && !admin) {
-    router.push("/login");
-    return null;
-  }
+  const [step, setStep] = useState<Step>('topic');
+  const [topic, setTopic] = useState('');
+  const [platform, setPlatform] = useState('instagram');
+  const [language, setLanguage] = useState('arabic');
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [caption, setCaption] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageBase64, setImageBase64] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const generateIdeas = async () => {
-    setLoadingStep("ideas");
-    setError("");
+    if (!topic.trim()) {
+      setError('اكتب الموضوع الأول');
+      return;
+    }
+    setLoading(true);
+    setError('');
     try {
-      const res = await fetch("/api/social", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "ideas", topic: topic || undefined }),
+      const res = await fetch('/api/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ideas', topic, platform, language }),
       });
       const data = await res.json();
-      if (data.ideas) {
-        setIdeas(data.ideas);
-      } else {
-        setError(data.error || "Failed to generate ideas");
-      }
-    } catch {
-      setError("Network error. Please try again.");
+      if (data.error) throw new Error(data.error);
+      setIdeas(data.ideas);
+      setStep('ideas');
+    } catch (err: any) {
+      setError(err.message || 'حصل مشكلة');
+    } finally {
+      setLoading(false);
     }
-    setLoadingStep("");
   };
 
   const generateCaption = async () => {
     if (!selectedIdea) return;
-    setLoadingStep("caption");
-    setError("");
+    setLoading(true);
+    setError('');
     try {
-      const res = await fetch("/api/social", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: "caption",
-          idea: selectedIdea.title + " - " + selectedIdea.description,
+          action: 'caption',
+          topic,
           platform,
           language,
+          selectedIdea: selectedIdea.title + '. ' + selectedIdea.description
         }),
       });
       const data = await res.json();
-      if (data.caption) {
-        setCaption(data.caption);
-        setStep("caption");
-      } else {
-        setError(data.error || "Failed to generate caption");
-      }
-    } catch {
-      setError("Network error. Please try again.");
+      if (data.error) throw new Error(data.error);
+      setCaption(data.caption);
+      setHashtags(data.hashtags || []);
+      setStep('caption');
+    } catch (err: any) {
+      setError(err.message || 'حصل مشكلة');
+    } finally {
+      setLoading(false);
     }
-    setLoadingStep("");
   };
 
   const generateImage = async () => {
-    if (!selectedIdea) return;
-    setLoadingStep("image-prompt");
-    setError("");
+    setLoading(true);
+    setError('');
     try {
-      const promptRes = await fetch("/api/social", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "image-prompt",
-          idea: selectedIdea.title + " - " + selectedIdea.description,
-          platform,
-        }),
+      const res = await fetch('/api/social/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: selectedIdea?.title || topic, platform, language }),
       });
-      const promptData = await promptRes.json();
-      if (promptData.prompt) {
-        setImagePrompt(promptData.prompt);
-        setLoadingStep("image");
-        const imgRes = await fetch("/api/social/image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: promptData.prompt }),
-        });
-        const imgData = await imgRes.json();
-        if (imgData.image) {
-          setImageUrl(imgData.image);
-          setStep("image");
-        } else {
-          setError(imgData.error || "Failed to generate image");
-        }
-      } else {
-        setError(promptData.error || "Failed to generate image prompt");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    }
-    setLoadingStep("");
-  };
-
-  const copyCaption = async () => {
-    try {
-      await navigator.clipboard.writeText(caption);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      const textArea = document.createElement("textarea");
-      textArea.value = caption;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setImageBase64(data.image);
+      setImageUrl(`data:image/png;base64,${data.image}`);
+      setStep('image');
+    } catch (err: any) {
+      setError(err.message || 'حصل مشكلة');
+    } finally {
+      setLoading(false);
     }
   };
 
   const downloadImage = () => {
-    if (!imageUrl) return;
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `sgas-post-${Date.now()}.png`;
-    document.body.appendChild(link);
+    link.download = `sgas-social-${Date.now()}.png`;
     link.click();
-    document.body.removeChild(link);
   };
 
-  const resetFlow = () => {
-    setStep("idea");
+  const copyCaption = () => {
+    const fullText = `${caption}\n\n${hashtags.join(' ')}`;
+    navigator.clipboard.writeText(fullText);
+    alert('تم نسخ الكابشن! ✅');
+  };
+
+  const resetAll = () => {
+    setStep('topic');
+    setTopic('');
     setIdeas([]);
     setSelectedIdea(null);
-    setCaption("");
-    setImageUrl("");
-    setImagePrompt("");
-    setError("");
-    setTopic("");
+    setCaption('');
+    setHashtags([]);
+    setImageUrl('');
+    setImageBase64('');
+    setError('');
   };
 
-  const steps: { key: Step; label: string; icon: React.ReactNode }[] = [
-    { key: "idea", label: "Idea", icon: <Lightbulb className="h-4 w-4" /> },
-    { key: "caption", label: "Caption", icon: <Type className="h-4 w-4" /> },
-    { key: "image", label: "Image", icon: <ImageIcon className="h-4 w-4" /> },
-    { key: "review", label: "Review", icon: <Eye className="h-4 w-4" /> },
+  const stepsList: { key: Step; label: string; num: number }[] = [
+    { key: 'topic', label: 'الموضوع', num: 1 },
+    { key: 'ideas', label: 'الأفكار', num: 2 },
+    { key: 'caption', label: 'الكابشن', num: 3 },
+    { key: 'image', label: 'الصورة', num: 4 },
+    { key: 'review', label: 'المراجعة', num: 5 },
   ];
 
-  const getStepIndex = (s: Step) => steps.findIndex((st) => st.key === s);
+  const stepOrder: Step[] = ['topic', 'ideas', 'caption', 'image', 'review'];
+  const currentStepIndex = stepOrder.indexOf(step);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-950 text-white" dir="rtl">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/admin")}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5 text-gray-600" />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Social Media Manager</h1>
-              <p className="text-sm text-gray-500">AI-powered post creation</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-amber-500" />
-            <span className="text-sm font-medium text-gray-700">SGAS AI</span>
+      <div className="border-b border-gray-800 px-6 py-4">
+        <div className="flex items-center gap-4">
+          <Link href="/admin" className="text-gray-400 hover:text-white transition-colors">
+            → الرجوع للادمن
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-l from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              AI Social Media Manager
+            </h1>
+            <p className="text-gray-500 text-sm">انشاء بوستات انستا تلقائياً</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-        {/* Step Indicator */}
-        <div className="flex items-center justify-center mb-10">
-          {steps.map((s, i) => (
+      <div className="max-w-5xl mx-auto p-6">
+        {/* Progress Steps */}
+        <div className="flex items-center justify-between mb-10 px-4">
+          {stepsList.map((s, i) => (
             <div key={s.key} className="flex items-center">
-              <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  step === s.key
-                    ? "bg-brand-700 text-white shadow-lg shadow-brand-700/30"
-                    : getStepIndex(step) > i
-                    ? "bg-brand-100 text-brand-700"
-                    : "bg-gray-100 text-gray-400"
-                }`}
-              >
-                {s.icon}
-                <span className="hidden sm:inline">{s.label}</span>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                    i <= currentStepIndex
+                      ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-purple-500/25'
+                      : 'bg-gray-800 text-gray-500'
+                  }`}
+                >
+                  {i < currentStepIndex ? '✓' : s.num}
+                </div>
+                <span className={`text-xs mt-2 ${i <= currentStepIndex ? 'text-white' : 'text-gray-600'}`}>
+                  {s.label}
+                </span>
               </div>
-              {i < steps.length - 1 && (
-                <ChevronRight
-                  className={`h-4 w-4 mx-2 ${
-                    getStepIndex(step) > i ? "text-brand-400" : "text-gray-300"
+              {i < stepsList.length - 1 && (
+                <div
+                  className={`w-16 sm:w-24 h-0.5 mx-2 mt-[-20px] transition-all ${
+                    i < currentStepIndex ? 'bg-purple-500' : 'bg-gray-800'
                   }`}
                 />
               )}
@@ -244,484 +183,341 @@ export default function SocialMediaPage() {
           ))}
         </div>
 
-        {/* Error Alert */}
+        {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-red-400 text-center">
+            {error}
           </div>
         )}
 
-        {/* Step 1: Generate Ideas */}
-        {step === "idea" && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-amber-500" />
-                Generate Post Ideas
-              </h2>
-              <p className="text-gray-600 mb-4">
-                Tell AI what you want to post about, or leave empty for creative suggestions.
-              </p>
-              <div className="flex gap-3">
+        {/* Step 1: Topic */}
+        {step === 'topic' && (
+          <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
+            <h2 className="text-xl font-bold mb-6">ايه موضوع البوست؟</h2>
+            
+            <div className="space-y-5">
+              <div>
+                <label className="block text-gray-400 mb-2 text-sm">الموضوع</label>
                 <input
                   type="text"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g., upcoming workshop, exam tips, member spotlight..."
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-sm"
-                  onKeyDown={(e) => e.key === "Enter" && generateIdeas()}
+                  placeholder="مثلاً: تعريف بالـ SGAS، ورشة عمل جديدة، نصائح للطلاب..."
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+                  onKeyDown={(e) => e.key === 'Enter' && generateIdeas()}
                 />
-                <button
-                  onClick={generateIdeas}
-                  disabled={loadingStep === "ideas"}
-                  className="px-6 py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
-                >
-                  {loadingStep === "ideas" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  Generate
-                </button>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-400 mb-2 text-sm">المنصة</label>
+                  <select
+                    value={platform}
+                    onChange={(e) => setPlatform(e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="instagram">Instagram</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="twitter">Twitter / X</option>
+                    <option value="facebook">Facebook</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-400 mb-2 text-sm">اللغة</label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="arabic">العربية</option>
+                    <option value="english">English</option>
+                    <option value="both">عربي + انجليزي</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={generateIdeas}
+                disabled={loading}
+                className="w-full bg-gradient-to-l from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin">⏳</span> بتولد الأفكار...
+                  </span>
+                ) : (
+                  '✨ ولّد أفكار للبوست'
+                )}
+              </button>
             </div>
-
-            {ideas.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                  Select an idea to develop:
-                </h3>
-                {ideas.map((idea, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl p-6 border-2 border-gray-100 hover:border-brand-300 cursor-pointer transition-all duration-300 hover:shadow-md group"
-                    onClick={() => setSelectedIdea(idea)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="px-2 py-1 bg-brand-50 text-brand-700 rounded-lg text-xs font-semibold">
-                            {idea.type}
-                          </span>
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium">
-                            {idea.platform}
-                          </span>
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium">
-                            {idea.language}
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">{idea.title}</h3>
-                        <p className="text-sm text-gray-600">{idea.description}</p>
-                        <p className="text-xs text-gray-400 mt-2">Best time: {idea.bestTime}</p>
-                      </div>
-                      <div className="flex flex-col gap-2 shrink-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedIdea(idea);
-                          }}
-                          className={`p-2 rounded-xl transition-colors ${
-                            selectedIdea?.title === idea.title
-                              ? "bg-brand-700 text-white"
-                              : "bg-gray-100 text-gray-400 hover:bg-brand-100 hover:text-brand-700"
-                          }`}
-                        >
-                          <CheckCircle2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {selectedIdea && (
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Platform
-                      </label>
-                      <div className="flex gap-2">
-                        {(["instagram", "linkedin", "both"] as const).map((p) => (
-                          <button
-                            key={p}
-                            onClick={() => setPlatform(p)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                              platform === p
-                                ? p === "instagram"
-                                  ? "bg-pink-600 text-white"
-                                  : p === "linkedin"
-                                  ? "bg-blue-700 text-white"
-                                  : "bg-brand-700 text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
-                          >
-                            {p === "instagram" && <Instagram className="h-4 w-4" />}
-                            {p === "linkedin" && <Linkedin className="h-4 w-4" />}
-                            {p === "both" && (
-                              <>
-                                <Instagram className="h-4 w-4" />
-                                <span>+</span>
-                                <Linkedin className="h-4 w-4" />
-                              </>
-                            )}
-                            {p.charAt(0).toUpperCase() + p.slice(1)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Language
-                      </label>
-                      <div className="flex gap-2">
-                        {(["en", "ar", "both"] as const).map((l) => (
-                          <button
-                            key={l}
-                            onClick={() => setLanguage(l)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                              language === l
-                                ? "bg-brand-700 text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
-                          >
-                            <Languages className="h-4 w-4" />
-                            {l === "en" ? "English" : l === "ar" ? "Arabic" : "Both"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedIdea && (
-                  <button
-                    onClick={generateCaption}
-                    disabled={loadingStep === "caption"}
-                    className="w-full py-4 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-bold text-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {loadingStep === "caption" ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Type className="h-5 w-5" />
-                        Write Caption for: &quot;{selectedIdea.title}&quot;
-                      </>
-                    )}
-                  </button>
-                )}
-
-                <button
-                  onClick={generateIdeas}
-                  disabled={loadingStep === "ideas"}
-                  className="w-full py-3 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl font-medium hover:border-brand-400 hover:text-brand-600 transition-colors flex items-center justify-center gap-2"
-                >
-                  <RefreshCw className={`h-4 w-4 ${loadingStep === "ideas" ? "animate-spin" : ""}`} />
-                  Generate New Ideas
-                </button>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Step 2: Review Caption */}
-        {step === "caption" && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <Type className="h-5 w-5 text-brand-600" />
-                  Post Caption
-                </h2>
-                <button
-                  onClick={copyCaption}
-                  className="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-100 transition-colors"
-                >
-                  {copied ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                  {copied ? "Copied!" : "Copy"}
-                </button>
-              </div>
-              <textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                rows={12}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-sm leading-relaxed resize-y"
-                placeholder="Caption will appear here..."
-              />
-              <div className="flex items-center justify-between mt-3">
-                <p className="text-xs text-gray-400">
-                  {caption.length} characters
-                  {platform === "instagram" && caption.length > 2200 && " (over 2200 limit)"}
-                </p>
-                <button
-                  onClick={generateCaption}
-                  disabled={loadingStep === "caption"}
-                  className="flex items-center gap-2 px-3 py-1.5 text-gray-500 hover:text-brand-700 rounded-lg text-sm hover:bg-gray-100 transition-colors"
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${loadingStep === "caption" ? "animate-spin" : ""}`} />
-                  Regenerate
-                </button>
-              </div>
+        {/* Step 2: Ideas */}
+        {step === 'ideas' && (
+          <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">اختار فكرة البوست</h2>
+              <button
+                onClick={generateIdeas}
+                disabled={loading}
+                className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                {loading ? '⏳ بتولد...' : '🔄 ولّد أفكار جديدة'}
+              </button>
             </div>
 
-            <div className="flex gap-3">
+            <div className="space-y-4">
+              {ideas.map((idea) => (
+                <button
+                  key={idea.id}
+                  onClick={() => setSelectedIdea(idea)}
+                  className={`w-full text-right p-5 rounded-xl border transition-all ${
+                    selectedIdea?.id === idea.id
+                      ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10'
+                      : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">
+                      {idea.type === 'engagement' && '💬'}
+                      {idea.type === 'educational' && '📚'}
+                      {idea.type === 'announcement' && '📢'}
+                      {idea.type === 'motivational' && '💪'}
+                      {idea.type === 'fun' && '🎉'}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg mb-1">{idea.title}</h3>
+                      <p className="text-gray-400 text-sm mb-2">{idea.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {idea.suggestedHashtags?.map((tag) => (
+                          <span key={tag} className="text-xs bg-gray-700 text-purple-300 px-2 py-1 rounded-full">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      selectedIdea?.id === idea.id ? 'border-purple-500 bg-purple-500' : 'border-gray-600'
+                    }`}>
+                      {selectedIdea?.id === idea.id && '✓'}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setStep("idea")}
-                className="flex-1 py-4 border-2 border-gray-200 text-gray-700 rounded-xl font-bold transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
+                onClick={() => setStep('topic')}
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
               >
-                <ArrowLeft className="h-5 w-5" />
-                Back to Ideas
+                → رجوع
+              </button>
+              <button
+                onClick={generateCaption}
+                disabled={!selectedIdea || loading}
+                className="flex-1 bg-gradient-to-l from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? '⏳ بيكتب الكابشن...' : '✍️ اكتب الكابشن'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Caption */}
+        {step === 'caption' && (
+          <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
+            <h2 className="text-xl font-bold mb-4">الكابشن</h2>
+
+            <div className="bg-gray-800 rounded-xl p-5 mb-6">
+              <pre className="whitespace-pre-wrap text-gray-200 text-sm leading-relaxed font-sans">
+                {caption}
+              </pre>
+            </div>
+
+            {hashtags.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm text-gray-400 mb-2">الهاشتاجات المقترحة</h3>
+                <div className="flex flex-wrap gap-2">
+                  {hashtags.map((tag) => (
+                    <span key={tag} className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 mb-4">
+              <button
+                onClick={() => setStep('ideas')}
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                → رجوع
+              </button>
+              <button
+                onClick={generateCaption}
+                disabled={loading}
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
+              >
+                {loading ? '⏳' : '🔄 كابشن تاني'}
               </button>
               <button
                 onClick={generateImage}
-                disabled={loadingStep === "image-prompt" || loadingStep === "image"}
-                className="flex-[2] py-4 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={loading}
+                className="flex-1 bg-gradient-to-l from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loadingStep === "image-prompt" || loadingStep === "image" ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    {loadingStep === "image-prompt" ? "Preparing prompt..." : "Generating image..."}
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="h-5 w-5" />
-                    Generate Post Image
-                  </>
-                )}
+                {loading ? '⏳ بتعمل الصورة...' : '🎨 اعمل صورة للبوست'}
               </button>
             </div>
-
-            <button
-              onClick={() => setStep("review")}
-              className="w-full py-3 text-brand-600 hover:text-brand-800 font-medium text-sm transition-colors"
-            >
-              Skip image &rarr; Review & Export
-            </button>
           </div>
         )}
 
-        {/* Step 3: Image */}
-        {step === "image" && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5 text-brand-600" />
-                  Post Image
-                </h2>
-                {imageUrl && (
-                  <button
-                    onClick={downloadImage}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-100 transition-colors"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download
-                  </button>
-                )}
-              </div>
-              {loadingStep === "image-prompt" || loadingStep === "image" ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 className="h-10 w-10 text-brand-600 animate-spin mb-4" />
-                  <p className="text-gray-600 font-medium">
-                    {loadingStep === "image-prompt"
-                      ? "AI is designing your image..."
-                      : "Generating high-quality image..."}
-                  </p>
-                  <p className="text-sm text-gray-400 mt-1">This may take 10-20 seconds</p>
-                </div>
-              ) : imageUrl ? (
-                <div className="flex justify-center">
+        {/* Step 4: Image */}
+        {step === 'image' && (
+          <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
+            <h2 className="text-xl font-bold mb-4">صورة البوست</h2>
+
+            <div className="flex justify-center mb-6">
+              {imageUrl ? (
+                <div className="relative group">
                   <img
                     src={imageUrl}
-                    alt="Generated post image"
-                    className="max-w-md w-full rounded-xl shadow-lg"
+                    alt="Post image"
+                    className="w-80 h-80 object-cover rounded-2xl shadow-2xl shadow-purple-500/20"
                   />
+                  <button
+                    onClick={downloadImage}
+                    className="absolute bottom-3 right-3 bg-black/70 hover:bg-black/90 text-white px-4 py-2 rounded-lg text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    ⬇️ تحميل
+                  </button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                  <ImageIcon className="h-10 w-10 mb-3" />
-                  <p>No image generated yet</p>
+                <div className="w-80 h-80 bg-gray-800 rounded-2xl flex items-center justify-center text-gray-500">
+                  مفيش صورة
                 </div>
               )}
             </div>
 
             <div className="flex gap-3">
               <button
-                onClick={() => setStep("caption")}
-                className="flex-1 py-4 border-2 border-gray-200 text-gray-700 rounded-xl font-bold transition-colors hover:bg-gray-50 flex items-center justify-center gap-2"
+                onClick={() => setStep('caption')}
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
               >
-                <ArrowLeft className="h-5 w-5" />
-                Back
+                → رجوع
               </button>
               <button
                 onClick={generateImage}
-                disabled={loadingStep === "image"}
-                className="flex-1 py-4 border-2 border-brand-200 text-brand-700 rounded-xl font-bold transition-colors hover:bg-brand-50 flex items-center justify-center gap-2 disabled:opacity-50"
+                disabled={loading}
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
               >
-                <RefreshCw className={`h-5 w-5 ${loadingStep === "image" ? "animate-spin" : ""}`} />
-                New Image
+                {loading ? '⏳' : '🔄 صورة تانية'}
               </button>
               <button
-                onClick={() => setStep("review")}
-                className="flex-[2] py-4 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+                onClick={() => setStep('review')}
+                className="flex-1 bg-gradient-to-l from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 rounded-xl transition-all"
               >
-                <Eye className="h-5 w-5" />
-                Review & Export
+                ✅ مراجعة ونشر
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 4: Review & Export */}
-        {step === "review" && (
-          <div className="space-y-6">
-            <div className="bg-gradient-to-br from-brand-700 to-brand-900 rounded-2xl p-6 text-white">
-              <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                <CheckCircle2 className="h-6 w-6" />
-                Post Ready!
-              </h2>
-              <p className="text-brand-200 text-sm">
-                Review everything below, then copy the caption and download the image to post.
-              </p>
-            </div>
+        {/* Step 5: Review */}
+        {step === 'review' && (
+          <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
+            <h2 className="text-xl font-bold mb-6 text-center">✨ مراجعة البوست</h2>
 
-            {selectedIdea && (
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  Post Details
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-400">Title</p>
-                    <p className="font-medium text-gray-900 text-sm">{selectedIdea.title}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Image */}
+              <div>
+                <h3 className="text-sm text-gray-400 mb-3">الصورة</h3>
+                {imageUrl ? (
+                  <div className="relative">
+                    <img
+                      src={imageUrl}
+                      alt="Post image"
+                      className="w-full aspect-square object-cover rounded-xl"
+                    />
+                    <button
+                      onClick={downloadImage}
+                      className="mt-2 w-full bg-gray-800 hover:bg-gray-700 py-2 rounded-lg text-sm transition-colors"
+                    >
+                      ⬇️ تحميل الصورة
+                    </button>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Platform</p>
-                    <p className="font-medium text-gray-900 text-sm capitalize">{platform}</p>
+                ) : (
+                  <div className="w-full aspect-square bg-gray-800 rounded-xl flex items-center justify-center text-gray-500">
+                    مفيش صورة
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Type</p>
-                    <p className="font-medium text-gray-900 text-sm capitalize">{selectedIdea.type}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">Language</p>
-                    <p className="font-medium text-gray-900 text-sm capitalize">{language}</p>
-                  </div>
-                </div>
+                )}
               </div>
-            )}
 
-            {imageUrl && (
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                    Image
-                  </h3>
-                  <button
-                    onClick={downloadImage}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-100 transition-colors"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download PNG
-                  </button>
-                </div>
-                <div className="flex justify-center">
-                  <img
-                    src={imageUrl}
-                    alt="Post image"
-                    className="max-w-sm w-full rounded-xl shadow-md"
-                  />
-                </div>
-              </div>
-            )}
-
-            {caption && (
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                    Caption
-                  </h3>
-                  <button
-                    onClick={copyCaption}
-                    className="flex items-center gap-2 px-4 py-2 bg-brand-700 text-white rounded-xl text-sm font-medium hover:bg-brand-800 transition-colors"
-                  >
-                    {copied ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                    {copied ? "Copied!" : "Copy Caption"}
-                  </button>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+              {/* Caption */}
+              <div>
+                <h3 className="text-sm text-gray-400 mb-3">الكابشن</h3>
+                <div className="bg-gray-800 rounded-xl p-4 mb-4 max-h-[300px] overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-gray-200 text-sm leading-relaxed font-sans">
                     {caption}
-                  </p>
+                  </pre>
+                </div>
+                <button
+                  onClick={copyCaption}
+                  className="w-full bg-purple-600 hover:bg-purple-500 py-2 rounded-lg text-sm transition-colors"
+                >
+                  📋 نسخ الكابشن + الهاشتاجات
+                </button>
+              </div>
+            </div>
+
+            {/* Hashtags */}
+            {hashtags.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-sm text-gray-400 mb-2">الهاشتاجات</h3>
+                <div className="flex flex-wrap gap-2">
+                  {hashtags.map((tag) => (
+                    <span key={tag} className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-purple-500/30" onClick={() => navigator.clipboard.writeText(`#${tag}`)}>
+                      #{tag}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-                Quick Actions
-              </h3>
-              <div className="grid sm:grid-cols-2 gap-3">
+            {/* Actions */}
+            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+              <h3 className="font-bold mb-4 text-center">🚀 نشر البوست</h3>
+              <p className="text-gray-400 text-sm text-center mb-4">
+                انسخ الكابشن وحمل الصورة، واذهب لنشرها يدوياً
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <a
-                  href="https://www.instagram.com/"
+                  href="https://www.instagram.com/sgas.cu"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-colors"
+                  className="flex items-center justify-center gap-2 bg-gradient-to-l from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 rounded-xl transition-all"
                 >
-                  <Instagram className="h-6 w-6 text-pink-600" />
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">Open Instagram</p>
-                    <p className="text-xs text-gray-500">Paste caption & upload image</p>
-                  </div>
+                  📸 نشر على انستا
                 </a>
                 <a
-                  href="https://www.linkedin.com/feed/"
+                  href="https://www.linkedin.com/company/sgas-cu"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+                  className="flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-all"
                 >
-                  <Linkedin className="h-6 w-6 text-blue-700" />
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">Open LinkedIn</p>
-                    <p className="text-xs text-gray-500">Create new post with content</p>
-                  </div>
+                  💼 نشر على لينكدإن
                 </a>
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={generateCaption}
-                disabled={loadingStep === "caption"}
-                className="flex-1 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-bold transition-colors hover:bg-gray-50 flex items-center justify-center gap-2 text-sm"
-              >
-                <RefreshCw className="h-4 w-4" />
-                New Caption
-              </button>
-              <button
-                onClick={generateImage}
-                disabled={loadingStep === "image"}
-                className="flex-1 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-bold transition-colors hover:bg-gray-50 flex items-center justify-center gap-2 text-sm"
-              >
-                <ImageIcon className="h-4 w-4" />
-                New Image
-              </button>
-              <button
-                onClick={resetFlow}
-                className="flex-[2] py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 text-sm"
-              >
-                <Sparkles className="h-4 w-4" />
-                Create New Post
-              </button>
-            </div>
+            <button
+              onClick={resetAll}
+              className="w-full mt-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
+            >
+              🔄 بوست جديد
+            </button>
           </div>
         )}
       </div>
