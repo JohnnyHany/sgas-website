@@ -199,9 +199,9 @@ function makeOverlaySVG(title: string, body: string, style: StyleDef, hasAIImage
   <rect x="0" y="${H - 500}" width="${W}" height="500" fill="rgba(255,255,255,0.93)"/>
   <rect x="0" y="${H - 500}" width="${W}" height="5" fill="${C.green}"/>
   <text x="540" y="${H - 430}" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif" font-size="40" font-weight="bold" fill="${C.darkGreen}" text-anchor="middle" letter-spacing="8">SGAS</text>
-  ${textEl(titleLines, 540, ${H - 370}, 54, 38, C.darkText, 'bold')}
+  ${textEl(titleLines, 540, H - 370, 54, 38, C.darkText, 'bold')}
   <rect x="470" y="${H - 370 + titleBlockHeight + 10}" width="140" height="4" rx="2" fill="${C.green}"/>
-  ${textEl(bodyLines, 540, ${H - 370 + titleBlockHeight + 50}, 38, 22, C.bodyText)}
+  ${textEl(bodyLines, 540, H - 370 + titleBlockHeight + 50, 38, 22, C.bodyText)}
   <rect x="0" y="${H - 80}" width="${W}" height="80" fill="rgba(0,0,0,0.04)"/>
   <rect x="470" y="${H - 75}" width="140" height="60" fill="rgba(0,0,0,0)"/>
   <text x="540" y="${H - 15}" font-family="DejaVu Sans, Liberation Sans, Arial, sans-serif" font-size="12" fill="${C.subText}" text-anchor="middle">@SGAS.CU  •  Cairo University</text>
