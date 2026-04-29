@@ -1,22 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-async function callAI(messages: any[], temperature = 0.8) {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+async function groqChat(systemPrompt: string, userPrompt: string, temperature: number = 0.7) {
+  const res = await fetch(GROQ_BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
     },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
-      messages,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
       temperature,
+      max_tokens: 2000,
     }),
   });
+
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Groq API error: ${err}`);
+    throw new Error(`Groq API error (${res.status}): ${err}`);
   }
+
   const data = await res.json();
   return data.choices[0]?.message?.content || '';
 }
@@ -29,20 +38,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Action is required' }, { status: 400 });
     }
 
-    const systemPrompt = `You are a social media content expert for SGAS (Student Group of Actuarial Science) at Cairo University. You create engaging content for university students interested in actuarial science, insurance, risk management, and data science. Always write in ${language || 'arabic'}. Be creative, professional but friendly, and use relevant emojis.`;
+    if (!GROQ_API_KEY) {
+      return NextResponse.json(
+        { error: 'GROQ_API_KEY is not configured. Please add it to your Vercel environment variables.' },
+        { status: 500 }
+      );
+    }
+
+    const systemPrompt = `You are a social media content expert for SGAS (Student Group of Actuarial Science) at Cairo University. You create engaging content for university students interested in actuarial science, insurance, risk management, and data science. Be creative, professional but friendly, and use relevant emojis.`;
 
     if (action === 'ideas') {
+      const langInstruction = language === 'english'
+        ? 'Write all content in English.'
+        : language === 'both'
+          ? 'Write the title in English and description in Arabic.'
+          : 'Write all content in Arabic.';
+
       const userPrompt = `Generate 3 creative social media post ideas about: "${topic || 'actuarial science and student life'}"
-      
+
 Platform: ${platform || 'instagram'}
-Language: ${language || 'Arabic'}
+ ${langInstruction}
 
 Return ONLY a valid JSON array of 3 objects with this exact format:
 [
   {
     "id": 1,
-    "title": "short catchy title in the specified language",
-    "description": "brief description of what the post will be about (2-3 sentences in the specified language)",
+    "title": "short catchy title",
+    "description": "brief description of what the post will be about (2-3 sentences)",
     "type": "engagement|educational|announcement|motivational|fun",
     "suggestedHashtags": ["hashtag1", "hashtag2", "hashtag3"]
   }
@@ -50,24 +72,27 @@ Return ONLY a valid JSON array of 3 objects with this exact format:
 
 Do NOT include any text outside the JSON array.`;
 
-      const content = await callAI([
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ]);
+      const content = await groqChat(systemPrompt, userPrompt, 0.8);
 
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
-        return NextResponse.json({ error: 'Failed to parse ideas' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to parse ideas. Try again.' }, { status: 500 });
       }
 
       const ideas = JSON.parse(jsonMatch[0]);
       return NextResponse.json({ ideas });
 
     } else if (action === 'caption') {
+      const langInstruction = language === 'english'
+        ? 'Write the caption entirely in English.'
+        : language === 'both'
+          ? 'Write the caption in both Arabic and English (Arabic first, then English).'
+          : 'Write the caption entirely in Arabic.';
+
       const userPrompt = `Write a complete social media post caption based on this idea: "${selectedIdea || topic || 'SGAS student activities'}"
 
 Platform: ${platform || 'instagram'}
-Language: ${language || 'Arabic'}
+ ${langInstruction}
 
 Requirements:
 - Write an engaging, well-structured caption
@@ -85,14 +110,11 @@ Return ONLY a valid JSON object with this exact format:
 
 Do NOT include any text outside the JSON object.`;
 
-      const content = await callAI([
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ], 0.7);
+      const content = await groqChat(systemPrompt, userPrompt, 0.7);
 
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        return NextResponse.json({ error: 'Failed to parse caption' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to parse caption. Try again.' }, { status: 500 });
       }
 
       const result = JSON.parse(jsonMatch[0]);
