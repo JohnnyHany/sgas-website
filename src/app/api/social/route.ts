@@ -3,31 +3,48 @@ import { NextRequest, NextResponse } from 'next/server';
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-async function groqChat(systemPrompt: string, userPrompt: string, temperature: number = 0.7) {
-  const res = await fetch(GROQ_BASE_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature,
-      max_tokens: 2000,
-    }),
-  });
+function safeJSONParse(str: string) {
+  const cleaned = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  return JSON.parse(cleaned);
+}
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Groq API error (${res.status}): ${err}`);
+async function groqChat(systemPrompt: string, userPrompt: string, temperature: number = 0.7) {
+  const models = ['llama-3.1-8b-instant', 'gemma2-9b-it', 'llama-3.3-70b-versatile'];
+
+  for (const model of models) {
+    try {
+      const res = await fetch(GROQ_BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!res.ok) {
+        if (res.status === 429) continue;
+        const err = await res.text();
+        throw new Error(`Groq API error (${res.status}): ${err}`);
+      }
+
+      const data = await res.json();
+      return data.choices[0]?.message?.content || '';
+    } catch (e: any) {
+      if (e.message?.includes('Groq API error')) throw e;
+      continue;
+    }
   }
 
-  const data = await res.json();
-  return data.choices[0]?.message?.content || '';
+  throw new Error('All Groq models failed. Please try again later.');
 }
 
 export async function POST(request: NextRequest) {
@@ -79,7 +96,7 @@ Do NOT include any text outside the JSON array.`;
         return NextResponse.json({ error: 'Failed to parse ideas. Try again.' }, { status: 500 });
       }
 
-      const ideas = JSON.parse(jsonMatch[0]);
+      const ideas = safeJSONParse(jsonMatch[0]);
       return NextResponse.json({ ideas });
 
     } else if (action === 'caption') {
@@ -117,7 +134,7 @@ Do NOT include any text outside the JSON object.`;
         return NextResponse.json({ error: 'Failed to parse caption. Try again.' }, { status: 500 });
       }
 
-      const result = JSON.parse(jsonMatch[0]);
+      const result = safeJSONParse(jsonMatch[0]);
       return NextResponse.json(result);
 
     } else {
