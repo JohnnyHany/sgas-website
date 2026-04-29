@@ -21,11 +21,11 @@ export async function POST(request: NextRequest) {
 
     const content = extractPosterContent(caption, topic);
 
-    const bgPrompt = `Clean elegant social media post background. Soft off-white cream base with subtle decorative elements in pomegranate red, navy blue, and forest green. Minimalist geometric shapes, professional university aesthetic. NO text NO words NO letters. Square format.`;
+    const bgPrompt = `Clean elegant social media post background. Soft off-white cream base with subtle decorative elements in pomegranate red, navy blue, and forest green. Minimalist geometric shapes, professional university aesthetic. NO text NO words NO letters. Square format high quality`;
 
-    // Call Hugging Face Inference API (FREE, uses FLUX.1-schnell)
+    // Hugging Face Inference API with SDXL (FREE and reliable)
     const imgResponse = await fetch(
-      'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+      'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
       {
         method: 'POST',
         headers: {
@@ -37,16 +37,18 @@ export async function POST(request: NextRequest) {
           parameters: {
             width: 1024,
             height: 1024,
+            num_inference_steps: 30,
+            guidance_scale: 7.5,
           },
         }),
       }
     );
 
-    // If HF returns 503, model is loading - retry after few seconds
+    // Model loading (first time only)
     if (imgResponse.status === 503) {
-      const retryAfter = imgResponse.headers.get('retry-after') || '20';
+      const waitTime = imgResponse.headers.get('retry-after') || '30';
       return NextResponse.json(
-        { error: `MODEL_LOADING: Please wait ${retryAfter} seconds and try again. The model is waking up.` },
+        { error: `MODEL_LOADING: Wait ${waitTime}s then try again. First use takes time.` },
         { status: 503 }
       );
     }
@@ -54,12 +56,12 @@ export async function POST(request: NextRequest) {
     if (!imgResponse.ok) {
       const errBody = await imgResponse.text();
       return NextResponse.json(
-        { error: `HF_ERROR: ${errBody.substring(0, 200)}` },
+        { error: `HF_ERROR: ${errBody.substring(0, 300)}` },
         { status: 500 }
       );
     }
 
-    // HF returns raw image bytes, not JSON
+    // HF returns raw image bytes directly
     const imageBuffer = Buffer.from(await imgResponse.arrayBuffer());
     const background = await sharp(imageBuffer)
       .resize(1080, 1080, { fit: 'cover' })
