@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ImageResponse } from 'next/og';
+import { createElement as h, type ReactNode } from 'react';
 import sharp from 'sharp';
 import { readFile } from 'fs/promises';
 import path from 'path';
@@ -6,11 +8,50 @@ import path from 'path';
 const W = 1080;
 const H = 1080;
 
-function esc(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// ── Font Cache ─────────────────────────────────────────────
+
+interface FontEntry {
+  name: string;
+  data: ArrayBuffer;
+  weight: number;
+  style: string;
 }
 
-function wrap(text: string, max: number): string[] {
+let cachedFonts: FontEntry[] | null = null;
+
+async function loadFontFiles(family: string): Promise<ArrayBuffer[]> {
+  const cssUrl = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
+  const css = await fetch(cssUrl).then(r => r.text());
+  const urls = [...new Set([...css.matchAll(/url\((https?:\/\/[^)]+)\)/g)].map(m => m[1]))];
+  return Promise.all(urls.map(u => fetch(u, { signal: AbortSignal.timeout(10000) }).then(r => r.arrayBuffer()).catch(() => null)));
+}
+
+async function getFonts(): Promise<FontEntry[]> {
+  if (cachedFonts) return cachedFonts;
+
+  try {
+    const [interFiles, arabicFiles] = await Promise.all([
+      loadFontFiles('Inter'),
+      loadFontFiles('Noto+Sans+Arabic'),
+    ]);
+
+    cachedFonts = [
+      ...interFiles.filter(Boolean).map(d => ({ name: 'Inter', data: d!, weight: 400, style: 'normal' })),
+      ...arabicFiles.filter(Boolean).map(d => ({ name: 'Noto Sans Arabic', data: d!, weight: 400, style: 'normal' })),
+    ];
+
+    console.log(`Loaded ${cachedFonts.length} font files`);
+  } catch (err) {
+    console.warn('Font loading failed, using fallback:', err);
+    cachedFonts = [];
+  }
+
+  return cachedFonts;
+}
+
+// ── Text Utils ─────────────────────────────────────────────
+
+function wrapText(text: string, maxChars: number): string[] {
   if (!text) return [];
   const lines: string[] = [];
   for (const para of text.split(/\n+/)) {
@@ -20,8 +61,12 @@ function wrap(text: string, max: number): string[] {
     let line = '';
     for (const w of words) {
       if (!w) continue;
-      if (line.length + w.length + 1 > max && line) { lines.push(line); line = w; }
-      else line = line ? line + ' ' + w : w;
+      if (line.length + w.length + 1 > maxChars && line) {
+        lines.push(line);
+        line = w;
+      } else {
+        line = line ? line + ' ' + w : w;
+      }
     }
     if (line) lines.push(line);
   }
@@ -35,120 +80,31 @@ function cut(lines: string[], n: number): string[] {
   return r;
 }
 
-function txt(lines: string[], x: number, y: number, lh: number, fs: number, fill: string, bold: boolean = false, anchor: string = 'middle'): string {
-  const font = `font-family="Arial, Helvetica, DejaVu Sans, sans-serif" font-size="${fs}" fill="${fill}" text-anchor="${anchor}"${bold ? ' font-weight="bold"' : ''}`;
-  return lines.map((l, i) => `<text x="${x}" y="${y + i * lh}" ${font}>${esc(l)}</text>`).join('\n    ');
-}
+// ── Styles ─────────────────────────────────────────────────
 
-function generatePoster(title: string, body: string, styleId: string): string {
-  const titleLines = cut(wrap(title, 20), 3);
-  const bodyLines = cut(wrap(body, 34), 5);
-  const th = titleLines.length * 56;
+const STYLES: Record<string, { colors: string[]; accent: string }> = {
+  'gradient':  { colors: ['#B71C1C', '#8B0000', '#0D47A1'], accent: '#B71C1C' },
+  'navy':      { colors: ['#0D47A1', '#082B5E'], accent: '#0D47A1' },
+  'dark':      { colors: ['#1A1A2E', '#16213E', '#0F3460'], accent: '#E53935' },
+  'nature':    { colors: ['#2E7D32', '#1B5E20'], accent: '#2E7D32' },
+  'corporate': { colors: ['#B71C1C', '#0D47A1'], accent: '#0D47A1' },
+};
 
-  const configs: Record<string, {
-    headerBg: string; headerH: number;
-    titleColor: string; titleY: number; titleLh: number; titleFs: number;
-    bodyColor: string; bodyY: number; bodyLh: number; bodyFs: number;
-    accentColor: string; accentY: number;
-    logoY: number;
-  }> = {
-    'gradient': {
-      headerBg: 'linear-gradient(135deg, #B71C1C 0%, #8B0000 50%, #0D47A1 100%)',
-      headerH: 260,
-      titleColor: '#1A1A1A', titleY: 340, titleLh: 56, titleFs: 40,
-      bodyColor: '#424242', bodyY: 340 + 3 * 56 + 40, bodyLh: 38, bodyFs: 22,
-      accentColor: '#B71C1C', accentY: 340 + 3 * 56 + 20,
-      logoY: 940,
-    },
-    'geometric': {
-      headerBg: 'linear-gradient(180deg, #0D47A1 0%, #082B5E 100%)',
-      headerH: 300,
-      titleColor: '#1A1A1A', titleY: 370, titleLh: 56, titleFs: 40,
-      bodyColor: '#424242', bodyY: 370 + 3 * 56 + 40, bodyLh: 38, bodyFs: 22,
-      accentColor: '#0D47A1', accentY: 370 + 3 * 56 + 20,
-      logoY: 940,
-    },
-    'dark': {
-      headerBg: 'linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%)',
-      headerH: 320,
-      titleColor: '#FFFFFF', titleY: 390, titleLh: 56, titleFs: 40,
-      bodyColor: '#E0E0E0', bodyY: 390 + 3 * 56 + 40, bodyLh: 38, bodyFs: 22,
-      accentColor: '#E53935', accentY: 390 + 3 * 56 + 20,
-      logoY: 940,
-    },
-    'nature': {
-      headerBg: 'linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%)',
-      headerH: 250,
-      titleColor: '#1A1A1A', titleY: 330, titleLh: 56, titleFs: 40,
-      bodyColor: '#424242', bodyY: 330 + 3 * 56 + 40, bodyLh: 38, bodyFs: 22,
-      accentColor: '#2E7D32', accentY: 330 + 3 * 56 + 20,
-      logoY: 940,
-    },
-    'corporate': {
-      headerBg: 'linear-gradient(135deg, #B71C1C 0%, #0D47A1 100%)',
-      headerH: 280,
-      titleColor: '#1A1A1A', titleY: 360, titleLh: 56, titleFs: 40,
-      bodyColor: '#424242', bodyY: 360 + 3 * 56 + 40, bodyLh: 38, bodyFs: 22,
-      accentColor: '#0D47A1', accentY: 360 + 3 * 56 + 20,
-      logoY: 940,
-    },
-  };
-
-  const c = configs[styleId] || configs['gradient'];
-
-  return `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#B71C1C"/>
-      <stop offset="100%" style="stop-color:#0D47A1"/>
-    </linearGradient>
-  </defs>
-
-  <!-- White background (like SGAS logo background) -->
-  <rect width="${W}" height="${H}" fill="#FFFFFF"/>
-
-  <!-- Header -->
-  <rect width="${W}" height="${c.headerH}" fill="url(#hg)"/>
-
-  <!-- Header decorative circles -->
-  <circle cx="100" cy="180" r="180" fill="rgba(255,255,255,0.04)"/>
-  <circle cx="980" cy="40" r="120" fill="rgba(255,255,255,0.06)"/>
-  <circle cx="900" cy="200" r="80" fill="rgba(255,255,255,0.03)"/>
-
-  <!-- SGAS text in header -->
-  <text x="540" y="120" font-family="Arial, Helvetica, DejaVu Sans, sans-serif" font-size="52" font-weight="bold" fill="white" text-anchor="middle" letter-spacing="12">SGAS</text>
-  <text x="540" y="165" font-family="Arial, Helvetica, DejaVu Sans, sans-serif" font-size="14" fill="rgba(255,255,255,0.7)" text-anchor="middle" letter-spacing="3">STUDENT GROUP OF ACTUARIAL SCIENCE</text>
-  <line x1="440" y1="190" x2="640" y2="190" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
-
-  <!-- Title -->
-  ${txt(titleLines, 540, c.titleY, c.titleLh, c.titleFs, c.titleColor, true)}
-
-  <!-- Accent bar -->
-  <rect x="440" y="${c.accentY}" width="200" height="4" rx="2" fill="${c.accentColor}"/>
-
-  <!-- Body / Caption -->
-  ${txt(bodyLines, 540, c.bodyY, c.bodyLh, c.bodyFs, c.bodyColor)}
-
-  <!-- Footer -->
-  <rect x="0" y="${H - 100}" width="${W}" height="100" fill="#FAFAFA"/>
-  <line x1="0" y1="${H - 100}" x2="${W}" y2="${H - 100}" stroke="#E0E0E0" stroke-width="1"/>
-
-  <!-- Footer text -->
-  <text x="540" y="${H - 35}" font-family="Arial, Helvetica, DejaVu Sans, sans-serif" font-size="13" fill="#9E9E9E" text-anchor="middle" letter-spacing="1">@SGAS.CU  •  Cairo University</text>
-</svg>`;
-}
+// ── GET: Styles list ───────────────────────────────────────
 
 export async function GET() {
   return NextResponse.json({
     styles: [
       { id: 'gradient', name: 'Classic Red-Blue', nameAr: 'كلاسيك' },
-      { id: 'geometric', name: 'Navy Blue', nameAr: 'أزرق' },
+      { id: 'navy', name: 'Navy Blue', nameAr: 'أزرق' },
       { id: 'dark', name: 'Dark Mode', nameAr: 'داكن' },
       { id: 'nature', name: 'Green', nameAr: 'أخضر' },
       { id: 'corporate', name: 'Corporate Mix', nameAr: 'كوربوريت' },
     ],
   });
 }
+
+// ── POST: Generate poster ──────────────────────────────────
 
 export async function POST(request: NextRequest) {
   try {
@@ -160,16 +116,124 @@ export async function POST(request: NextRequest) {
 
     const title = topic || 'SGAS';
     const body = caption || '';
+    const style = STYLES[styleId] || STYLES['gradient'];
+    const fonts = await getFonts();
+    const fontFamily = fonts.length > 0
+      ? "'Inter', 'Noto Sans Arabic', sans-serif"
+      : "sans-serif";
 
-    // Step 1: Generate poster SVG
-    const svgString = generatePoster(title, body, styleId);
-    const svgBuffer = Buffer.from(svgString);
+    const titleLines = cut(wrapText(title, 20), 3);
+    const bodyLines = cut(wrapText(body, 34), 5);
 
-    // Step 2: Convert SVG to PNG
-    let pipeline = sharp(svgBuffer, { density: 150 })
-      .resize(W, H, { fit: 'fill' });
+    // Build poster JSX using createElement
+    const titleEls: ReactNode[] = titleLines.map((line, i) =>
+      h('div', {
+        key: 't' + i,
+        style: {
+          fontSize: '42px',
+          fontWeight: '700' as const,
+          color: '#1A1A1A',
+          textAlign: 'center' as const,
+          lineHeight: '1.3',
+        },
+      }, line)
+    );
 
-    // Step 3: Add SGAS logo
+    const bodyEls: ReactNode[] = bodyLines.map((line, i) =>
+      h('div', {
+        key: 'b' + i,
+        style: {
+          fontSize: '22px',
+          fontWeight: '400' as const,
+          color: '#424242',
+          textAlign: 'center' as const,
+          lineHeight: '1.6',
+        },
+      }, line)
+    );
+
+    const poster = h('div', {
+      style: {
+        width: W + 'px',
+        height: H + 'px',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        backgroundColor: '#FFFFFF',
+        fontFamily,
+      },
+    },
+      // Header
+      h('div', {
+        style: {
+          width: '100%',
+          height: '260px',
+          display: 'flex',
+          flexDirection: 'column' as const,
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, ' + style.colors.join(', ') + ')',
+        },
+      },
+        h('div', {
+          style: { fontSize: '52px', fontWeight: '700' as const, color: '#FFFFFF', letterSpacing: '12px' },
+        }, 'SGAS'),
+        h('div', {
+          style: { fontSize: '14px', color: 'rgba(255,255,255,0.75)', letterSpacing: '3px', marginTop: '8px' },
+        }, 'STUDENT GROUP OF ACTUARIAL SCIENCE'),
+        h('div', {
+          style: { width: '180px', height: '1px', backgroundColor: 'rgba(255,255,255,0.3)', marginTop: '18px' },
+        }),
+      ),
+
+      // Content area
+      h('div', {
+        style: {
+          flex: '1',
+          display: 'flex',
+          flexDirection: 'column' as const,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 80px',
+        },
+      },
+        ...titleEls,
+        // Accent bar
+        h('div', {
+          style: { width: '200px', height: '4px', backgroundColor: style.accent, borderRadius: '2px', marginTop: '20px', marginBottom: '24px' },
+        }),
+        ...bodyEls,
+      ),
+
+      // Footer
+      h('div', {
+        style: {
+          width: '100%',
+          height: '100px',
+          display: 'flex',
+          flexDirection: 'column' as const,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#FAFAFA',
+          borderTop: '1px solid #E0E0E0',
+        },
+      },
+        h('div', {
+          style: { fontSize: '13px', color: '#9E9E9E', letterSpacing: '1px' },
+        }, '@SGAS.CU  \u2022  Cairo University'),
+      ),
+    );
+
+    // Render with ImageResponse (satori + sharp)
+    const imgResponse = new ImageResponse(poster, {
+      width: W,
+      height: H,
+      fonts,
+    });
+
+    const buffer = Buffer.from(await imgResponse.arrayBuffer());
+
+    // Add SGAS logo overlay
+    let finalBuffer = buffer;
     try {
       let logoBuffer: Buffer | null = null;
       try {
@@ -183,28 +247,30 @@ export async function POST(request: NextRequest) {
 
       if (logoBuffer) {
         const resizedLogo = await sharp(logoBuffer)
-          .resize(90, 90, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+          .resize(80, 80, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
           .png()
           .toBuffer();
 
-        pipeline = pipeline.composite([{
-          input: resizedLogo,
-          left: 495,
-          top: 950,
-        }]);
+        finalBuffer = await sharp(buffer)
+          .composite([{ input: resizedLogo, left: 500, top: 945 }])
+          .png()
+          .toBuffer();
       }
-    } catch (logoErr) {
-      console.warn('Logo failed:', logoErr);
+    } catch (e) {
+      console.warn('Logo overlay failed:', e);
     }
 
-    // Step 4: Output PNG
-    const outputBuffer = await pipeline.png().toBuffer();
-    const base64 = outputBuffer.toString('base64');
-
-    return NextResponse.json({ image: base64, success: true, style: styleId });
+    return NextResponse.json({
+      image: finalBuffer.toString('base64'),
+      success: true,
+      style: styleId,
+    });
 
   } catch (error: any) {
     console.error('Image generation error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to generate image' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to generate image' },
+      { status: 500 }
+    );
   }
 }
