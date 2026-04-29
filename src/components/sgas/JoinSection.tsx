@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import {
   Linkedin,
+  Instagram,
   MessageCircle,
   Mail,
   ExternalLink,
@@ -31,7 +32,7 @@ export default function JoinSection() {
         </div>
 
         {/* Social Cards Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {/* LinkedIn */}
           <a
             href="https://www.linkedin.com/company/sgas/"
@@ -64,6 +65,24 @@ export default function JoinSection() {
             <p className="text-sm text-gray-500 mb-4">{j.whatsappLabel[lang]}</p>
             <span className="inline-flex items-center gap-1 text-sm text-green-600 font-medium group-hover:gap-2 transition-all">
               {j.joinNow[lang]}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </span>
+          </a>
+
+          {/* Instagram */}
+          <a
+            href="https://www.instagram.com/sgas.cu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-pink-200 shadow-sm hover:shadow-xl hover:shadow-pink-500/10 transition-all duration-500 text-center"
+          >
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:from-purple-600 group-hover:to-pink-600 group-hover:scale-110 transition-all duration-300">
+              <Instagram className="h-8 w-8 text-pink-600 group-hover:text-white transition-colors duration-300" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Instagram</h3>
+            <p className="text-sm text-gray-500 mb-4">{j.instagramLabel[lang]}</p>
+            <span className="inline-flex items-center gap-1 text-sm text-pink-600 font-medium group-hover:gap-2 transition-all">
+              {j.followUs[lang]}
               <ExternalLink className="h-3.5 w-3.5" />
             </span>
           </a>
