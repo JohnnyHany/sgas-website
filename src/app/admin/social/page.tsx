@@ -220,8 +220,6 @@ export default function SocialMediaPage() {
                     className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500">
                     <option value="instagram">Instagram</option>
                     <option value="linkedin">LinkedIn</option>
-                    <option value="twitter">Twitter / X</option>
-                    <option value="facebook">Facebook</option>
                   </select>
                 </div>
                 <div>
