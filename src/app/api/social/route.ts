@@ -9,7 +9,7 @@ function safeJSONParse(str: string) {
 }
 
 async function groqChat(systemPrompt: string, userPrompt: string, temperature: number = 0.7) {
-  const models = ['llama-3.1-8b-instant', 'gemma2-9b-it', 'llama-3.3-70b-versatile'];
+  const models = ['llama-3.1-8b-instant', 'llama3-8b-8192', 'llama-3.3-70b-versatile'];
 
   for (const model of models) {
     try {
