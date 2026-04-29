@@ -296,4 +296,177 @@ function tplDark(title: string, body: string[]): TemplateResult {
     <rect x="${W - 120}" y="${H - 4}" width="120" height="4" fill="${C.navy}"/>
     <rect x="${W - 4}" y="${H - 120}" width="4" height="120" fill="${C.navy}"/>
     <circle cx="${W / 2}" cy="85" r="42" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <circle cx="55" cy="${H - 55}" r="38" fill="rgba(255,255,255,0.05)" stroke="
+    <circle cx="55" cy="${H - 55}" r="38" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  `;
+
+  const items: TextItem[] = [
+    { type: 'text', lines: [ORG_NAME], x: W / 2, y: 195, lineHeight: 20, fontSize: 14, fontWeight: 'normal', fill: 'rgba(255,255,255,0.35)', anchor: 'middle' },
+    { type: 'text', lines: tl, x: W / 2, y: 300, lineHeight: 56, fontSize: 42, fontWeight: 'bold', fill: 'white', anchor: 'middle' },
+    { type: 'divider', x: W / 2 - 50, y: 300 + th + 18, width: 100, height: 4, color: C.red, radius: 2 },
+    { type: 'text', lines: bl, x: W / 2, y: 300 + th + 55, lineHeight: 36, fontSize: 22, fontWeight: 'normal', fill: 'rgba(255,255,255,0.7)', anchor: 'middle' },
+    { type: 'text', lines: ['@SGAS.CU  \u2022  Cairo University'], x: W / 2, y: H - 28, lineHeight: 20, fontSize: 12, fontWeight: 'normal', fill: 'rgba(255,255,255,0.25)', anchor: 'middle' },
+  ];
+
+  return { bgSvg, items };
+}
+
+// ── 5. Corporate Split ───────────────────────────────────────
+function tplCorporate(title: string, body: string[]): TemplateResult {
+  const tl = wrapText(title, 17).slice(0, 3);
+  const bl = body.flatMap(b => wrapText(b, 32)).slice(0, 5);
+  const th = tl.length * 50;
+
+  const bgSvg = `
+    <defs>
+      <linearGradient id="corpPanel" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:${C.red}"/>
+        <stop offset="100%" style="stop-color:${C.darkNavy}"/>
+      </linearGradient>
+    </defs>
+    <rect width="${W}" height="${H}" fill="${C.lightGray}"/>
+    <rect x="0" y="0" width="380" height="${H}" fill="url(#corpPanel)"/>
+    <circle cx="380" cy="90" r="40" fill="${C.red}"/>
+    <circle cx="190" cy="260" r="160" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <circle cx="190" cy="${H - 190}" r="130" fill="rgba(255,255,255,0.04)"/>
+    <rect x="30" y="520" width="50" height="50" rx="10" fill="rgba(255,255,255,0.08)"/>
+    <circle cx="190" cy="410" r="10" fill="${C.green}"/>
+    <rect x="425" y="85" width="590" height="840" rx="20" fill="rgba(0,0,0,0.06)"/>
+    <rect x="420" y="80" width="590" height="840" rx="20" fill="white"/>
+    <circle cx="${W - 55}" cy="${H - 55}" r="38" fill="${C.lightGray}" opacity="0.5"/>
+  `;
+
+  const items: TextItem[] = [
+    { type: 'text', lines: ['SGAS'], x: 190, y: 350, lineHeight: 40, fontSize: 32, fontWeight: '900', fill: 'rgba(255,255,255,0.9)', anchor: 'middle' },
+    { type: 'text', lines: ['ACTUARIAL SCIENCE'], x: 190, y: 380, lineHeight: 20, fontSize: 10, fontWeight: 'normal', fill: 'rgba(255,255,255,0.4)', anchor: 'middle' },
+    { type: 'text', lines: ['FEATURED POST'], x: 715, y: 170, lineHeight: 20, fontSize: 12, fontWeight: 'normal', fill: C.subText, anchor: 'middle' },
+    { type: 'text', lines: tl, x: 715, y: 240, lineHeight: 50, fontSize: 36, fontWeight: 'bold', fill: C.darkText, anchor: 'middle' },
+    { type: 'divider', x: 685, y: 240 + th + 12, width: 60, height: 4, color: C.navy, radius: 2 },
+    { type: 'text', lines: bl, x: 715, y: 240 + th + 45, lineHeight: 34, fontSize: 20, fontWeight: 'normal', fill: C.bodyText, anchor: 'middle' },
+    { type: 'text', lines: ['@SGAS.CU  \u2022  Cairo University'], x: 670, y: H - 40, lineHeight: 20, fontSize: 12, fontWeight: 'normal', fill: C.subText, anchor: 'middle' },
+  ];
+
+  return { bgSvg, items };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   REGISTRY
+   ══════════════════════════════════════════════════════════════ */
+
+const TEMPLATES: Record<string, (t: string, b: string[]) => TemplateResult> = {
+  geometric: tplGeometric,
+  diagonal: tplDiagonal,
+  nature: tplNature,
+  dark: tplDark,
+  corporate: tplCorporate,
+};
+
+const LOGO_SPOTS: Record<string, LogoSpot[]> = {
+  geometric: [
+    { cx: W - 65, cy: 65, d: 100 },
+    { cx: 65, cy: H - 65, d: 72 },
+  ],
+  diagonal: [
+    { cx: 80, cy: 80, d: 82 },
+    { cx: W - 60, cy: H - 60, d: 72 },
+  ],
+  nature: [
+    { cx: W / 2, cy: 130, d: 100 },
+    { cx: W - 65, cy: H - 65, d: 58 },
+  ],
+  dark: [
+    { cx: W / 2, cy: 85, d: 78 },
+    { cx: 55, cy: H - 55, d: 70 },
+  ],
+  corporate: [
+    { cx: 190, cy: 580, d: 100 },
+    { cx: W - 55, cy: H - 55, d: 70 },
+  ],
+};
+
+/* ══════════════════════════════════════════════════════════════
+   GET: STYLE LIST
+   ══════════════════════════════════════════════════════════════ */
+
+export async function GET() {
+  return NextResponse.json({
+    styles: [
+      { id: 'geometric', name: 'Geometric Overlap', nameAr: 'هندسي', colors: ['#B71C1C', '#0D47A1', '#FFF8E1'] },
+      { id: 'diagonal', name: 'Diagonal Card', nameAr: 'دياجونال', colors: ['#B71C1C', '#082B5E', '#FFFFFF'] },
+      { id: 'nature', name: 'Green Nature', nameAr: 'طبيعي', colors: ['#2E7D32', '#FAFAFA', '#1B5E20'] },
+      { id: 'dark', name: 'Dark Premium', nameAr: 'داكن فاخر', colors: ['#0F0F1A', '#B71C1C', '#0D47A1'] },
+      { id: 'corporate', name: 'Corporate Split', nameAr: 'كوربوريت', colors: ['#B71C1C', '#0D47A1', '#F0F0F0'] },
+    ],
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   POST: GENERATE POSTER
+   ══════════════════════════════════════════════════════════════ */
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const topic = body.topic || '';
+    const caption = body.caption || '';
+    const styleId = body.templateId || body.styleId || 'geometric';
+    const customBackground = body.customBackground || null;
+
+    if (!topic && !caption) {
+      return NextResponse.json({ error: 'Topic or caption is required' }, { status: 400 });
+    }
+
+    const { title, body: posterBody } = await extractPosterText(caption, topic);
+
+    const templateFn = TEMPLATES[styleId] || TEMPLATES['geometric'];
+    const result = templateFn(title, posterBody);
+
+    let bgBuffer: Buffer;
+    const svgStr = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${result.bgSvg}</svg>`;
+
+    if (customBackground) {
+      try {
+        let bgImageBuf: Buffer;
+        if (customBackground.startsWith('data:')) {
+          const base64Data = customBackground.replace(/^data:image\/\w+;base64,/, '');
+          bgImageBuf = Buffer.from(base64Data, 'base64');
+        } else {
+          const r = await fetch(customBackground, { signal: AbortSignal.timeout(15000) });
+          if (!r.ok) throw new Error('Failed to fetch custom background');
+          bgImageBuf = Buffer.from(await r.arrayBuffer());
+        }
+        bgBuffer = await sharp(bgImageBuf).resize(W, H, { fit: 'cover' }).png().toBuffer();
+        const overlayColor = styleId === 'dark' ? 'rgba(10,10,20,0.55)' : 'rgba(255,255,255,0.65)';
+        const overlaySvg = `<svg width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="${overlayColor}"/></svg>`;
+        const overlayBuf = await sharp(Buffer.from(overlaySvg)).png().toBuffer();
+        bgBuffer = await sharp(bgBuffer).composite([{ input: overlayBuf }]).png().toBuffer();
+      } catch {
+        bgBuffer = await sharp(Buffer.from(svgStr)).resize(W, H).png().toBuffer();
+      }
+    } else {
+      bgBuffer = await sharp(Buffer.from(svgStr)).resize(W, H).png().toBuffer();
+    }
+
+    const logoRaw = await loadLogo();
+    let logoBuffer: Buffer | null = null;
+    if (logoRaw) {
+      logoBuffer = await makeCircularLogo(logoRaw, 200);
+    }
+
+    const spots = LOGO_SPOTS[styleId] || LOGO_SPOTS['geometric'];
+
+    return NextResponse.json({
+      background: bgBuffer.toString('base64'),
+      logo: logoBuffer ? logoBuffer.toString('base64') : null,
+      logoSpots: spots,
+      textItems: result.items,
+      posterTitle: title,
+      posterBody: posterBody,
+      success: true,
+      style: styleId,
+    });
+
+  } catch (error: any) {
+    console.error('Image generation error:', error);
+    return NextResponse.json({ error: error.message || 'Failed to generate image' }, { status: 500 });
+  }
+}
