@@ -11,7 +11,7 @@ async function groqChat(systemPrompt: string, userPrompt: string, temperature: n
       'Authorization': `Bearer ${GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'model: 'llama-3.1-8b-instant',',
+      model: 'llama-3.1-8b-instant',',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
