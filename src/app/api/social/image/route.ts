@@ -82,7 +82,7 @@ async function extractPosterText(caption: string, topic: string) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: `Extract poster text. Rules:
 1. Extract ONLY the most impactful catchy lines
