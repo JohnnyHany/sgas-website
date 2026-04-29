@@ -5,71 +5,35 @@ import fs from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { topic, caption, platform } = await request.json();
+    const { topic, caption } = await request.json();
 
     if (!topic) {
       return NextResponse.json({ error: 'Topic is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.HF_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'MISSING_KEY: Add HF_API_KEY in Vercel Environment Variables' },
-        { status: 500 }
-      );
-    }
-
     const content = extractPosterContent(caption, topic);
 
-    const bgPrompt = `Clean elegant social media post background. Soft off-white cream base with subtle decorative elements in pomegranate red, navy blue, and forest green. Minimalist geometric shapes, professional university aesthetic. NO text NO words NO letters. Square format high quality`;
+    // Generate background with Pollinations (FREE, no key needed, always works)
+    const bgPrompt = `Clean white cream background with subtle soft red blue green abstract shapes, professional minimalist design, no text no words no letters, elegant social media post background`;
 
-    // Hugging Face Inference API with SDXL (FREE and reliable)
-    const imgResponse = await fetch(
-      'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          inputs: bgPrompt,
-          parameters: {
-            width: 1024,
-            height: 1024,
-            num_inference_steps: 30,
-            guidance_scale: 7.5,
-          },
-        }),
-      }
-    );
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(bgPrompt)}?width=1024&height=1024&nologo=true&seed=${Date.now()}`;
 
-    // Model loading (first time only)
-    if (imgResponse.status === 503) {
-      const waitTime = imgResponse.headers.get('retry-after') || '30';
-      return NextResponse.json(
-        { error: `MODEL_LOADING: Wait ${waitTime}s then try again. First use takes time.` },
-        { status: 503 }
-      );
+    const bgResponse = await fetch(imageUrl);
+
+    if (!bgResponse.ok) {
+      throw new Error(`Background generation failed: ${bgResponse.status}`);
     }
 
-    if (!imgResponse.ok) {
-      const errBody = await imgResponse.text();
-      return NextResponse.json(
-        { error: `HF_ERROR: ${errBody.substring(0, 300)}` },
-        { status: 500 }
-      );
-    }
-
-    // HF returns raw image bytes directly
-    const imageBuffer = Buffer.from(await imgResponse.arrayBuffer());
+    const imageBuffer = Buffer.from(await bgResponse.arrayBuffer());
     const background = await sharp(imageBuffer)
       .resize(1080, 1080, { fit: 'cover' })
       .png()
       .toBuffer();
 
+    // Build SVG overlay with text and design
     const svgOverlay = buildPosterSVG(content);
 
+    // Load logo
     const logoPath = path.join(process.cwd(), 'public', 'sgas-logo.png');
     const composites: any[] = [{ input: Buffer.from(svgOverlay) }];
 
@@ -94,7 +58,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ image: finalBuffer.toString('base64'), success: true });
 
   } catch (error: any) {
-    return NextResponse.json({ error: `CRASH: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
