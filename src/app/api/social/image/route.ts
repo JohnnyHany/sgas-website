@@ -122,28 +122,36 @@ async function loadLogo(): Promise<Buffer | null> {
 }
 
 async function makeCircularLogo(raw: Buffer, diameter: number): Promise<Buffer> {
-  // Use 80% of diameter for actual logo content → prevents cropping
-  const innerD = Math.round(diameter * 0.78);
-  const offset = Math.round((diameter - innerD) / 2);
+  const r = diameter / 2;
 
-  const mask = Buffer.from(
-    `<svg width="${diameter}" height="${diameter}"><circle cx="${diameter / 2}" cy="${diameter / 2}" r="${diameter / 2}"/></svg>`
+  // Step 1: Scale logo to fill the circle completely
+  const scaledLogo = await sharp(raw)
+    .resize(diameter, diameter, { fit: 'cover', background: { r: 255, g: 255, b: 255, alpha: 0 } })
+    .png()
+    .toBuffer();
+
+  // Step 2: Create circle mask to clip the square into a circle
+  const circleMask = Buffer.from(
+    `<svg width="${diameter}" height="${diameter}">
+      <circle cx="${r}" cy="${r}" r="${r}"/>
+    </svg>`
   );
 
-  const logoInner = await sharp(raw)
-    .resize(innerD, innerD, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  // Step 3: Clip the logo to circle
+  const clipped = await sharp(scaledLogo)
+    .composite([{ input: circleMask, blend: 'dest-in' }])
     .png()
     .toBuffer();
 
-  const padded = await sharp({
-    create: { width: diameter, height: diameter, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } }
-  })
-    .composite([{ input: logoInner, left: offset, top: offset }])
-    .png()
-    .toBuffer();
+  // Step 4: Add thin border ring
+  const borderSvg = Buffer.from(
+    `<svg width="${diameter}" height="${diameter}">
+      <circle cx="${r}" cy="${r}" r="${r - 1}" fill="none" stroke="rgba(200,200,200,0.5)" stroke-width="2"/>
+    </svg>`
+  );
 
-  return sharp(padded)
-    .composite([{ input: mask, blend: 'dest-in' }])
+  return sharp(clipped)
+    .composite([{ input: borderSvg }])
     .png()
     .toBuffer();
 }
