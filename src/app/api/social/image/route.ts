@@ -7,6 +7,7 @@ import path from 'path';
 
 const W = 1080;
 const H = 1080;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 // ── Font Cache ─────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ interface FontEntry {
 let cachedFonts: FontEntry[] | null = null;
 
 async function loadFontFiles(family: string): Promise<ArrayBuffer[]> {
-  const cssUrl = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
+  const cssUrl = `https://fonts.googleapis.com/css2?family=${family}:wght@400;600;700;800;900&display=swap`;
   const css = await fetch(cssUrl).then(r => r.text());
   const urls = [...new Set([...css.matchAll(/url\((https?:\/\/[^)]+)\)/g)].map(m => m[1]))];
   return Promise.all(urls.map(u => fetch(u, { signal: AbortSignal.timeout(10000) }).then(r => r.arrayBuffer()).catch(() => null)));
@@ -28,25 +29,73 @@ async function loadFontFiles(family: string): Promise<ArrayBuffer[]> {
 
 async function getFonts(): Promise<FontEntry[]> {
   if (cachedFonts) return cachedFonts;
-
   try {
-    const [interFiles, arabicFiles] = await Promise.all([
-      loadFontFiles('Inter'),
-      loadFontFiles('Noto+Sans+Arabic'),
-    ]);
-
+    const [interFiles] = await Promise.all([loadFontFiles('Inter')]);
     cachedFonts = [
       ...interFiles.filter(Boolean).map(d => ({ name: 'Inter', data: d!, weight: 400, style: 'normal' })),
-      ...arabicFiles.filter(Boolean).map(d => ({ name: 'Noto Sans Arabic', data: d!, weight: 400, style: 'normal' })),
     ];
-
     console.log(`Loaded ${cachedFonts.length} font files`);
   } catch (err) {
-    console.warn('Font loading failed, using fallback:', err);
+    console.warn('Font loading failed:', err);
     cachedFonts = [];
   }
-
   return cachedFonts;
+}
+
+// ── Extract & translate caption to English ─────────────────
+
+async function extractPosterText(caption: string, topic: string): Promise<{ title: string; body: string[] }> {
+  if (!GROQ_API_KEY) {
+    return { title: topic || 'SGAS', body: caption ? [caption] : [] };
+  }
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: `You extract poster text from social media captions. Rules:
+1. Extract only the MOST impactful and catchy lines
+2. Always translate to ENGLISH even if the caption is in Arabic or any other language
+3. Title: 1 short catchy phrase (max 8 words)
+4. Body: 2-4 short powerful lines (max 12 words each)
+5. Remove emojis, hashtags, and @mentions
+6. Make it sound professional and engaging
+7. Return ONLY valid JSON, no markdown`
+          },
+          {
+            role: 'user',
+            content: `Topic: ${topic}\n\nCaption:\n${caption}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+      }),
+    });
+
+    if (!res.ok) throw new Error('Groq failed');
+    const data = await res.json();
+    const content = data.choices[0]?.message?.content || '';
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      title: parsed.title || topic || 'SGAS',
+      body: Array.isArray(parsed.body) ? parsed.body : (parsed.body ? [parsed.body] : []),
+    };
+  } catch (err) {
+    console.warn('AI text extraction failed, using raw caption:', err);
+    const body = caption ? caption.split('\n').filter(l => l.trim().length > 0).slice(0, 4) : [];
+    return { title: topic || 'SGAS', body };
+  }
 }
 
 // ── Text Utils ─────────────────────────────────────────────
@@ -73,24 +122,17 @@ function wrapText(text: string, maxChars: number): string[] {
   return lines;
 }
 
-function cut(lines: string[], n: number): string[] {
-  if (lines.length <= n) return lines;
-  const r = lines.slice(0, n);
-  r[n - 1] = r[n - 1].length > 3 ? r[n - 1].slice(0, -3) + '...' : r[n - 1];
-  return r;
-}
-
 // ── Styles ─────────────────────────────────────────────────
 
-const STYLES: Record<string, { colors: string[]; accent: string }> = {
-  'gradient':  { colors: ['#B71C1C', '#8B0000', '#0D47A1'], accent: '#B71C1C' },
-  'navy':      { colors: ['#0D47A1', '#082B5E'], accent: '#0D47A1' },
-  'dark':      { colors: ['#1A1A2E', '#16213E', '#0F3460'], accent: '#E53935' },
-  'nature':    { colors: ['#2E7D32', '#1B5E20'], accent: '#2E7D32' },
-  'corporate': { colors: ['#B71C1C', '#0D47A1'], accent: '#0D47A1' },
+const STYLES: Record<string, { colors: string[]; accent: string; textColor: string; bodyColor: string }> = {
+  'gradient':  { colors: ['#B71C1C', '#8B0000', '#0D47A1'], accent: '#B71C1C', textColor: '#111111', bodyColor: '#333333' },
+  'navy':      { colors: ['#0D47A1', '#082B5E'], accent: '#0D47A1', textColor: '#111111', bodyColor: '#333333' },
+  'dark':      { colors: ['#1A1A2E', '#16213E', '#0F3460'], accent: '#E53935', textColor: '#FFFFFF', bodyColor: '#E0E0E0' },
+  'nature':    { colors: ['#2E7D32', '#1B5E20'], accent: '#2E7D32', textColor: '#111111', bodyColor: '#333333' },
+  'corporate': { colors: ['#B71C1C', '#0D47A1'], accent: '#0D47A1', textColor: '#111111', bodyColor: '#333333' },
 };
 
-// ── GET: Styles list ───────────────────────────────────────
+// ── GET ────────────────────────────────────────────────────
 
 export async function GET() {
   return NextResponse.json({
@@ -104,7 +146,7 @@ export async function GET() {
   });
 }
 
-// ── POST: Generate poster ──────────────────────────────────
+// ── POST ───────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,40 +156,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Topic or caption is required' }, { status: 400 });
     }
 
-    const title = topic || 'SGAS';
-    const body = caption || '';
     const style = STYLES[styleId] || STYLES['gradient'];
     const fonts = await getFonts();
-    const fontFamily = fonts.length > 0
-      ? "'Inter', 'Noto Sans Arabic', sans-serif"
-      : "sans-serif";
+    const fontFamily = fonts.length > 0 ? "'Inter', sans-serif" : "sans-serif";
 
-    const titleLines = cut(wrapText(title, 20), 3);
-    const bodyLines = cut(wrapText(body, 34), 5);
+    // AI: extract key text and translate to English
+    const { title, body } = await extractPosterText(caption || '', topic || '');
 
-    // Build poster JSX using createElement
+    // Wrap text
+    const titleLines = wrapText(title, 18);
+    const allBodyLines: string[] = [];
+    for (const b of body) {
+      allBodyLines.push(...wrapText(b, 38));
+    }
+    const displayBody = allBodyLines.slice(0, 5);
+
+    // Build poster JSX
     const titleEls: ReactNode[] = titleLines.map((line, i) =>
       h('div', {
         key: 't' + i,
         style: {
-          fontSize: '42px',
-          fontWeight: '700' as const,
-          color: '#1A1A1A',
+          fontSize: '46px',
+          fontWeight: '800' as const,
+          color: style.textColor,
           textAlign: 'center' as const,
-          lineHeight: '1.3',
+          lineHeight: '1.25',
+          letterSpacing: '-0.5px',
         },
       }, line)
     );
 
-    const bodyEls: ReactNode[] = bodyLines.map((line, i) =>
+    const bodyEls: ReactNode[] = displayBody.map((line, i) =>
       h('div', {
         key: 'b' + i,
         style: {
-          fontSize: '22px',
+          fontSize: '24px',
           fontWeight: '400' as const,
-          color: '#424242',
+          color: style.bodyColor,
           textAlign: 'center' as const,
           lineHeight: '1.6',
+          marginTop: i === 0 ? '0px' : '8px',
         },
       }, line)
     );
@@ -166,7 +214,7 @@ export async function POST(request: NextRequest) {
       h('div', {
         style: {
           width: '100%',
-          height: '260px',
+          height: '250px',
           display: 'flex',
           flexDirection: 'column' as const,
           alignItems: 'center',
@@ -175,17 +223,17 @@ export async function POST(request: NextRequest) {
         },
       },
         h('div', {
-          style: { fontSize: '52px', fontWeight: '700' as const, color: '#FFFFFF', letterSpacing: '12px' },
+          style: { fontSize: '54px', fontWeight: '900' as const, color: '#FFFFFF', letterSpacing: '14px' },
         }, 'SGAS'),
         h('div', {
-          style: { fontSize: '14px', color: 'rgba(255,255,255,0.75)', letterSpacing: '3px', marginTop: '8px' },
+          style: { fontSize: '13px', color: 'rgba(255,255,255,0.7)', letterSpacing: '4px', marginTop: '10px' },
         }, 'STUDENT GROUP OF ACTUARIAL SCIENCE'),
         h('div', {
-          style: { width: '180px', height: '1px', backgroundColor: 'rgba(255,255,255,0.3)', marginTop: '18px' },
+          style: { width: '180px', height: '2px', backgroundColor: 'rgba(255,255,255,0.3)', marginTop: '20px' },
         }),
       ),
 
-      // Content area
+      // Content
       h('div', {
         style: {
           flex: '1',
@@ -193,13 +241,12 @@ export async function POST(request: NextRequest) {
           flexDirection: 'column' as const,
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 80px',
+          padding: '50px 90px',
         },
       },
         ...titleEls,
-        // Accent bar
         h('div', {
-          style: { width: '200px', height: '4px', backgroundColor: style.accent, borderRadius: '2px', marginTop: '20px', marginBottom: '24px' },
+          style: { width: '180px', height: '4px', backgroundColor: style.accent, borderRadius: '2px', marginTop: '24px', marginBottom: '28px' },
         }),
         ...bodyEls,
       ),
@@ -218,12 +265,12 @@ export async function POST(request: NextRequest) {
         },
       },
         h('div', {
-          style: { fontSize: '13px', color: '#9E9E9E', letterSpacing: '1px' },
+          style: { fontSize: '13px', color: '#999999', letterSpacing: '1px' },
         }, '@SGAS.CU  \u2022  Cairo University'),
       ),
     );
 
-    // Render with ImageResponse (satori + sharp)
+    // Render
     const imgResponse = new ImageResponse(poster, {
       width: W,
       height: H,
@@ -232,7 +279,7 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await imgResponse.arrayBuffer());
 
-    // Add SGAS logo overlay
+    // Add logo
     let finalBuffer = buffer;
     try {
       let logoBuffer: Buffer | null = null;
@@ -252,18 +299,20 @@ export async function POST(request: NextRequest) {
           .toBuffer();
 
         finalBuffer = await sharp(buffer)
-          .composite([{ input: resizedLogo, left: 500, top: 945 }])
+          .composite([{ input: resizedLogo, left: 500, top: 948 }])
           .png()
           .toBuffer();
       }
     } catch (e) {
-      console.warn('Logo overlay failed:', e);
+      console.warn('Logo failed:', e);
     }
 
     return NextResponse.json({
       image: finalBuffer.toString('base64'),
       success: true,
       style: styleId,
+      posterTitle: title,
+      posterBody: displayBody,
     });
 
   } catch (error: any) {
