@@ -20,27 +20,27 @@ interface StyleOption {
 }
 
 const DEFAULT_STYLES: StyleOption[] = [
-  { id: 'gradient', name: 'AI Gradient', nameAr: 'جرادينت AI' },
-  { id: 'geometric', name: 'Geometric', nameAr: 'هندسي' },
-  { id: 'dark', name: 'Dark Pro', nameAr: 'داكن احترافي' },
-  { id: 'nature', name: 'Nature', nameAr: 'طبيعي' },
-  { id: 'corporate', name: 'Corporate', nameAr: 'كوربوريت' },
+  { id: 'geometric', name: 'Geometric Overlap', nameAr: 'هندسي' },
+  { id: 'diagonal', name: 'Diagonal Card', nameAr: 'دياجونال' },
+  { id: 'nature', name: 'Green Nature', nameAr: 'طبيعي' },
+  { id: 'dark', name: 'Dark Premium', nameAr: 'داكن فاخر' },
+  { id: 'corporate', name: 'Corporate Split', nameAr: 'كوربوريت' },
 ];
 
 const STYLE_COLORS: Record<string, string[]> = {
-  'gradient': ['#B71C1C', '#1A1A2E', '#FFFFFF'],
-  'geometric': ['#B71C1C', '#FFFFFF', '#0D47A1'],
-  'dark': ['#0A0A14', '#E53935', '#FFFFFF'],
-  'nature': ['#2E7D32', '#FFFFFF', '#8BC34A'],
-  'corporate': ['#0D47A1', '#FFFFFF', '#B71C1C'],
+  'geometric': ['#FFF8E1', '#B71C1C', '#0D47A1'],
+  'diagonal': ['#B71C1C', '#082B5E', '#FFFFFF'],
+  'nature': ['#2E7D32', '#1B5E20', '#FAFAFA'],
+  'dark': ['#0F0F1A', '#1A1A2E', '#B71C1C'],
+  'corporate': ['#B71C1C', '#F5F5F5', '#0D47A1'],
 };
 
 const STYLE_ICONS: Record<string, string> = {
-  'gradient': '🎨',
-  'geometric': '🔷',
-  'dark': '🌙',
+  'geometric': '🔵',
+  'diagonal': '💎',
   'nature': '🌿',
-  'corporate': '💼',
+  'dark': '🌙',
+  'corporate': '🏢',
 };
 
 export default function SocialMediaPage() {
