@@ -1,24 +1,127 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
 type Step = 'topic' | 'ideas' | 'caption' | 'image' | 'review';
 
 interface Idea {
-  id: number;
-  title: string;
-  description: string;
-  type: string;
-  suggestedHashtags: string[];
+  id: number; title: string; description: string;
+  type: string; suggestedHashtags: string[];
 }
 
 interface StyleOption {
-  id: string;
-  name: string;
-  nameAr: string;
-  colors: string[];
+  id: string; name: string; nameAr: string; colors: string[];
 }
+
+interface TextBlock {
+  type: 'text';
+  lines: string[];
+  x: number; y: number;
+  lineHeight: number;
+  fontSize: number;
+  fontWeight: string;
+  fill: string;
+  anchor: string;
+}
+
+interface DividerRect {
+  type: 'divider';
+  x: number; y: number;
+  width: number; height: number;
+  color: string; radius: number;
+}
+
+interface LogoSpot { cx: number; cy: number; d: number; }
+
+interface ImageData {
+  full: string;
+  background: string;
+  textLayer: string;
+  logo: string | null;
+}
+
+const CANVAS_SIZE = 1080;
+
+/* ══════════════════════════════════════════════════════════════
+   CANVAS RENDERING — text rendered with browser fonts
+   ══════════════════════════════════════════════════════════════ */
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function drawRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number, r: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function renderToCanvas(
+  bgImg: HTMLImageElement | null,
+  logoImg: HTMLImageElement | null,
+  textItems: (TextBlock | DividerRect)[],
+  logoSpots: LogoSpot[],
+  textOnly: boolean = false
+): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = CANVAS_SIZE;
+  canvas.height = CANVAS_SIZE;
+  const ctx = canvas.getContext('2d')!;
+
+  // Draw background
+  if (!textOnly && bgImg) {
+    ctx.drawImage(bgImg, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+  }
+
+  // Draw text items
+  for (const item of textItems) {
+    if (item.type === 'divider') {
+      ctx.fillStyle = item.color;
+      drawRoundRect(ctx, item.x, item.y, item.width, item.height, item.radius);
+    } else {
+      ctx.font = `${item.fontWeight} ${item.fontSize}px 'Inter', 'Segoe UI', Arial, sans-serif`;
+      ctx.fillStyle = item.fill;
+      ctx.textAlign = item.anchor === 'middle' ? 'center' : item.anchor === 'end' ? 'right' : 'left';
+
+      for (let i = 0; i < item.lines.length; i++) {
+        ctx.fillText(item.lines[i], item.x, item.y + i * item.lineHeight);
+      }
+    }
+  }
+
+  // Draw logos (skip for text-only layer)
+  if (!textOnly && logoImg && logoSpots) {
+    for (const spot of logoSpots) {
+      const left = spot.cx - spot.d / 2;
+      const top = spot.cy - spot.d / 2;
+      ctx.drawImage(logoImg, left, top, spot.d, spot.d);
+    }
+  }
+
+  return canvas.toDataURL('image/png');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   COMPONENT
+   ══════════════════════════════════════════════════════════════ */
 
 export default function SocialMediaPage() {
   const [step, setStep] = useState<Step>('topic');
@@ -29,7 +132,7 @@ export default function SocialMediaPage() {
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
-  const [imageData, setImageData] = useState<{ image: string; background: string; textLayer: string; logo: string | null } | null>(null);
+  const [imageData, setImageData] = useState<ImageData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [styleId, setStyleId] = useState('geometric');
@@ -42,11 +145,21 @@ export default function SocialMediaPage() {
     { id: 'corporate', name: 'Corporate Split', nameAr: 'كوربوريت', colors: ['#B71C1C', '#0D47A1', '#F0F0F0'] },
   ]);
 
+  // Load Inter font + fetch styles
   useEffect(() => {
+    // Load Google Font for Canvas
+    if (!document.querySelector('link[data-font="inter-poster"]')) {
+      const link = document.createElement('link');
+      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap';
+      link.rel = 'stylesheet';
+      link.setAttribute('data-font', 'inter-poster');
+      document.head.appendChild(link);
+    }
+
     fetch('/api/social/image')
       .then(r => r.json())
       .then(data => {
-        if (data.styles && data.styles.length > 0) {
+        if (data.styles?.length > 0) {
           setStyleOptions(data.styles);
           if (!data.styles.find((s: StyleOption) => s.id === styleId)) {
             setStyleId(data.styles[0].id);
@@ -79,7 +192,7 @@ export default function SocialMediaPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'caption', topic, platform, language,
-          selectedIdea: selectedIdea.title + '. ' + selectedIdea.description
+          selectedIdea: selectedIdea.title + '. ' + selectedIdea.description,
         }),
       });
       const data = await res.json();
@@ -92,6 +205,12 @@ export default function SocialMediaPage() {
   const generateImage = async () => {
     setLoading(true); setError(''); setImageData(null);
     try {
+      // Wait for font to be ready for Canvas rendering
+      try {
+        await document.fonts.load('bold 42px Inter');
+        await document.fonts.load('400 22px Inter');
+      } catch { /* font already loaded or fallback */ }
+
       const res = await fetch('/api/social/image', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,42 +222,57 @@ export default function SocialMediaPage() {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+
+      // Load images from base64
+      const bgSrc = 'data:image/png;base64,' + data.background;
+      const bgImg = await loadImage(bgSrc);
+      const logoImg = data.logo ? await loadImage('data:image/png;base64,' + data.logo) : null;
+
+      const textItems: (TextBlock | DividerRect)[] = data.textItems || [];
+      const logoSpots: LogoSpot[] = data.logoSpots || [];
+
+      // Render full composite on Canvas
+      const fullDataUrl = renderToCanvas(bgImg, logoImg, textItems, logoSpots, false);
+
+      // Render text-only layer (transparent background)
+      const textDataUrl = renderToCanvas(null, null, textItems, [], true);
+
       setImageData({
-        image: data.image,
-        background: data.background,
-        textLayer: data.textLayer,
-        logo: data.logo,
+        full: fullDataUrl,
+        background: bgSrc,
+        textLayer: textDataUrl,
+        logo: data.logo ? 'data:image/png;base64,' + data.logo : null,
       });
       setStep('image');
     } catch (err: any) { setError(err.message || 'حصل مشكلة'); }
     finally { setLoading(false); }
   };
 
-  const downloadLayer = (base64: string, filename: string) => {
+  const downloadDataUrl = (dataUrl: string, filename: string) => {
     const link = document.createElement('a');
-    link.href = 'data:image/png;base64,' + base64;
+    link.href = dataUrl;
     link.download = filename;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
 
   const downloadAllLayers = () => {
     if (!imageData) return;
-    const prefix = `sgas-${styleId}-${Date.now()}`;
-    downloadLayer(imageData.background, `${prefix}-background.png`);
-    setTimeout(() => downloadLayer(imageData.textLayer, `${prefix}-text.png`), 500);
+    const p = `sgas-${styleId}-${Date.now()}`;
+    downloadDataUrl(imageData.background, `${p}-background.png`);
+    setTimeout(() => downloadDataUrl(imageData.textLayer, `${p}-text.png`), 400);
     if (imageData.logo) {
-      setTimeout(() => downloadLayer(imageData.logo, `${prefix}-logo.png`), 1000);
+      setTimeout(() => downloadDataUrl(imageData.logo, `${p}-logo.png`), 800);
     }
-    setTimeout(() => downloadLayer(imageData.image, `${prefix}-full.png`), 1500);
+    setTimeout(() => downloadDataUrl(imageData.full, `${p}-full.png`), 1200);
   };
 
   const handleCustomBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      setCustomBg(reader.result as string);
-    };
+    reader.onload = () => setCustomBg(reader.result as string);
     reader.readAsDataURL(file);
   };
 
@@ -184,7 +318,9 @@ export default function SocialMediaPage() {
             <div key={s.key} className="flex items-center">
               <div className="flex flex-col items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                  i <= currentStepIndex ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-purple-500/25' : 'bg-gray-800 text-gray-500'
+                  i <= currentStepIndex
+                    ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg shadow-purple-500/25'
+                    : 'bg-gray-800 text-gray-500'
                 }`}>
                   {i < currentStepIndex ? '\u2713' : s.num}
                 </div>
@@ -253,7 +389,9 @@ export default function SocialMediaPage() {
               {ideas.map((idea) => (
                 <button key={idea.id} onClick={() => setSelectedIdea(idea)}
                   className={`w-full text-right p-5 rounded-xl border transition-all ${
-                    selectedIdea?.id === idea.id ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10' : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
+                    selectedIdea?.id === idea.id
+                      ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10'
+                      : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
                   }`}>
                   <div className="flex items-start gap-3">
                     <div className="text-2xl">
@@ -289,7 +427,7 @@ export default function SocialMediaPage() {
           </div>
         )}
 
-        {/* Step 3: Caption + Style + Custom BG */}
+        {/* Step 3: Caption + Style */}
         {step === 'caption' && (
           <div className="space-y-6">
             <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
@@ -301,7 +439,9 @@ export default function SocialMediaPage() {
                 <div className="mb-6">
                   <h3 className="text-sm text-gray-400 mb-2">الهاشتاجات</h3>
                   <div className="flex flex-wrap gap-2">
-                    {hashtags.map((tag) => (<span key={tag} className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm">#{tag}</span>))}
+                    {hashtags.map((tag) => (
+                      <span key={tag} className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm">#{tag}</span>
+                    ))}
                   </div>
                 </div>
               )}
@@ -315,13 +455,15 @@ export default function SocialMediaPage() {
 
             <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
               <h2 className="text-xl font-bold mb-2">اختار ستايل الصورة</h2>
-              <p className="text-gray-400 text-sm mb-6">اللوجو هيتحط تلقائي - ممكن ترفع خلفية مخصصة</p>
+              <p className="text-gray-400 text-sm mb-6">اللوجو الدائري هيتحط فوق وتحت تلقائي</p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
                 {styleOptions.map((s) => (
                   <button key={s.id} onClick={() => setStyleId(s.id)}
                     className={`relative p-4 rounded-xl border-2 transition-all text-center ${
-                      styleId === s.id ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10' : 'border-gray-700 bg-gray-800/50 hover:border-gray-500'
+                      styleId === s.id
+                        ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10'
+                        : 'border-gray-700 bg-gray-800/50 hover:border-gray-500'
                     }`}>
                     <div className="flex gap-1 justify-center mb-3">
                       {s.colors.map((color, i) => (
@@ -342,7 +484,6 @@ export default function SocialMediaPage() {
               {/* Custom Background */}
               <div className="bg-gray-800/50 rounded-xl p-4 mb-6 border border-gray-700">
                 <h3 className="text-sm font-bold text-gray-300 mb-2">خلفية مخصصة (اختياري)</h3>
-                <p className="text-xs text-gray-500 mb-3">ارفع صورة خلفية والتصميم هيتطبق عليها</p>
                 <div className="flex items-center gap-4">
                   <label className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm cursor-pointer transition-colors">
                     ارفع خلفية
@@ -373,63 +514,56 @@ export default function SocialMediaPage() {
             <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
               <h2 className="text-xl font-bold mb-4">صورة البوست</h2>
               <div className="flex justify-center mb-6">
-                <img src={'data:image/png;base64,' + imageData.image} alt="Post"
+                <img src={imageData.full} alt="Post"
                   className="w-80 h-80 object-cover rounded-2xl shadow-2xl shadow-purple-500/20" />
               </div>
             </div>
 
-            {/* Canva Layers Section */}
+            {/* Canva Layers */}
             <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
               <h2 className="text-xl font-bold mb-2">طبقات Canva</h2>
-              <p className="text-gray-400 text-sm mb-6">حمّل كل طبقة لوحدها وركبها في Canva - تقدر تعدل كل حاجة منفصلة</p>
+              <p className="text-gray-400 text-sm mb-6">حمّل كل طبقة لوحدها وركبها في Canva</p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {/* Background Layer */}
-                <button onClick={() => downloadLayer(imageData.background, `sgas-${styleId}-background.png`)}
-                  className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-purple-500 rounded-xl p-4 transition-all text-center group">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <button onClick={() => downloadDataUrl(imageData.background, `sgas-${styleId}-background.png`)}
+                  className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-purple-500 rounded-xl p-4 transition-all text-center">
                   <div className="w-full aspect-square rounded-lg overflow-hidden mb-3 bg-gray-700">
-                    <img src={'data:image/png;base64,' + imageData.background} alt="BG" className="w-full h-full object-cover" />
+                    <img src={imageData.background} alt="BG" className="w-full h-full object-cover" />
                   </div>
-                  <p className="font-bold text-sm text-white">Background</p>
-                  <p className="text-xs text-gray-400">الخلفية والأشكال</p>
+                  <p className="font-bold text-sm">Background</p>
+                  <p className="text-xs text-gray-400">الخلفية</p>
                 </button>
 
-                {/* Text Layer */}
-                <button onClick={() => downloadLayer(imageData.textLayer, `sgas-${styleId}-text.png`)}
-                  className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-purple-500 rounded-xl p-4 transition-all text-center group">
-                  <div className="w-full aspect-square rounded-lg overflow-hidden mb-3"
-                    style={{ backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0' }}>
-                    <img src={'data:image/png;base64,' + imageData.textLayer} alt="Text" className="w-full h-full object-cover" />
+                <button onClick={() => downloadDataUrl(imageData.textLayer, `sgas-${styleId}-text.png`)}
+                  className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-purple-500 rounded-xl p-4 transition-all text-center">
+                  <div className="w-full aspect-square rounded-lg overflow-hidden mb-3 checkerboard">
+                    <img src={imageData.textLayer} alt="Text" className="w-full h-full object-cover" />
                   </div>
-                  <p className="font-bold text-sm text-white">Text Layer</p>
-                  <p className="text-xs text-gray-400">الكلام فقط (شفاف)</p>
+                  <p className="font-bold text-sm">Text Layer</p>
+                  <p className="text-xs text-gray-400">الكلام</p>
                 </button>
 
-                {/* Logo Layer */}
                 {imageData.logo && (
-                  <button onClick={() => downloadLayer(imageData.logo, 'sgas-logo.png')}
-                    className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-purple-500 rounded-xl p-4 transition-all text-center group">
-                    <div className="w-full aspect-square rounded-lg overflow-hidden mb-3"
-                      style={{ backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0' }}>
-                      <img src={'data:image/png;base64,' + imageData.logo} alt="Logo" className="w-full h-full object-contain" />
+                  <button onClick={() => downloadDataUrl(imageData.logo, 'sgas-logo-circle.png')}
+                    className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-purple-500 rounded-xl p-4 transition-all text-center">
+                    <div className="w-full aspect-square rounded-lg overflow-hidden mb-3 checkerboard">
+                      <img src={imageData.logo} alt="Logo" className="w-full h-full object-contain" />
                     </div>
-                    <p className="font-bold text-sm text-white">Logo</p>
-                    <p className="text-xs text-gray-400">اللوجو (شفاف)</p>
+                    <p className="font-bold text-sm">Logo</p>
+                    <p className="text-xs text-gray-400">اللوجو الدائري</p>
                   </button>
                 )}
 
-                {/* Full Composite */}
-                <button onClick={() => downloadLayer(imageData.image, `sgas-${styleId}-full.png`)}
-                  className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-green-500 rounded-xl p-4 transition-all text-center group">
+                <button onClick={() => downloadDataUrl(imageData.full, `sgas-${styleId}-full.png`)}
+                  className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-green-500 rounded-xl p-4 transition-all text-center">
                   <div className="w-full aspect-square rounded-lg overflow-hidden mb-3 bg-gray-700">
-                    <img src={'data:image/png;base64,' + imageData.image} alt="Full" className="w-full h-full object-cover" />
+                    <img src={imageData.full} alt="Full" className="w-full h-full object-cover" />
                   </div>
-                  <p className="font-bold text-sm text-white">Full Image</p>
-                  <p className="text-xs text-gray-400">الصورة الكاملة</p>
+                  <p className="font-bold text-sm">Full Image</p>
+                  <p className="text-xs text-gray-400">الكاملة</p>
                 </button>
               </div>
 
-              {/* Download All */}
               <button onClick={downloadAllLayers}
                 className="w-full bg-gradient-to-l from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 rounded-xl transition-all">
                 حمّل كل الطبقات دفعة واحدة
@@ -455,8 +589,8 @@ export default function SocialMediaPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div>
                 <h3 className="text-sm text-gray-400 mb-3">الصورة</h3>
-                <img src={'data:image/png;base64,' + imageData.image} alt="Post" className="w-full aspect-square object-cover rounded-xl" />
-                <button onClick={() => downloadLayer(imageData.image, `sgas-${Date.now()}.png`)}
+                <img src={imageData.full} alt="Post" className="w-full aspect-square object-cover rounded-xl" />
+                <button onClick={() => downloadDataUrl(imageData.full, `sgas-${Date.now()}.png`)}
                   className="mt-2 w-full bg-gray-800 hover:bg-gray-700 py-2 rounded-lg text-sm">تحميل الصورة</button>
               </div>
               <div>
@@ -479,7 +613,7 @@ export default function SocialMediaPage() {
             )}
             <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
               <h3 className="font-bold mb-4 text-center">نشر البوست</h3>
-              <p className="text-gray-400 text-sm text-center mb-4">انسخ الكابشن وحمل الصورة، واذهب لنشرها يدوياً</p>
+              <p className="text-gray-400 text-sm text-center mb-4">انسخ الكابشن وحمل الصورة واذهب لنشرها يدوياً</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <a href="https://www.instagram.com/sgas.cu" target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 bg-gradient-to-l from-purple-600 to-pink-600 text-white font-bold py-3 rounded-xl">
@@ -495,6 +629,19 @@ export default function SocialMediaPage() {
           </div>
         )}
       </div>
+
+      {/* Checkerboard CSS for transparent layer preview */}
+      <style jsx>{`
+        .checkerboard {
+          background-image:
+            linear-gradient(45deg, #444 25%, transparent 25%),
+            linear-gradient(-45deg, #444 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #444 75%),
+            linear-gradient(-45deg, transparent 75%, #444 75%);
+          background-size: 20px 20px;
+          background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+        }
+      `}</style>
     </div>
   );
 }
