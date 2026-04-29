@@ -37,7 +37,9 @@ async function groqChat(systemPrompt: string, userPrompt: string, temperature: n
       }
 
       const data = await res.json();
-      return data.choices[0]?.message?.content || '';
+      const content = data.choices[0]?.message?.content || '';
+      if (!content) continue;
+      return content;
     } catch (e: any) {
       if (e.message?.includes('Groq API error')) throw e;
       continue;
@@ -57,12 +59,12 @@ export async function POST(request: NextRequest) {
 
     if (!GROQ_API_KEY) {
       return NextResponse.json(
-        { error: 'GROQ_API_KEY is not configured. Please add it to your Vercel environment variables.' },
+        { error: 'GROQ_API_KEY is not configured.' },
         { status: 500 }
       );
     }
 
-    const systemPrompt = `You are a social media content expert for SGAS (Student Group of Actuarial Science) at Cairo University. You create engaging content for university students interested in actuarial science, insurance, risk management, and data science. Be creative, professional but friendly, and use relevant emojis.`;
+    const systemPrompt = `You are a social media content expert for SGAS (Strive and Grow in Actuarial Science) at Cairo University.`;
 
     if (action === 'ideas') {
       const langInstruction = language === 'english'
@@ -71,69 +73,60 @@ export async function POST(request: NextRequest) {
           ? 'Write the title in English and description in Arabic.'
           : 'Write all content in Arabic.';
 
-      const userPrompt = `Generate 3 creative social media post ideas about: "${topic || 'actuarial science and student life'}"
+      const userPrompt = `Generate 3 creative social media post ideas about: "${topic || 'actuarial science'}"
 
 Platform: ${platform || 'instagram'}
  ${langInstruction}
 
-Return ONLY a valid JSON array of 3 objects with this exact format:
+Return ONLY a valid JSON array of 3 objects:
 [
   {
     "id": 1,
     "title": "short catchy title",
-    "description": "brief description of what the post will be about (2-3 sentences)",
+    "description": "2-3 sentences",
     "type": "engagement|educational|announcement|motivational|fun",
-    "suggestedHashtags": ["hashtag1", "hashtag2", "hashtag3"]
+    "suggestedHashtags": ["tag1", "tag2", "tag3"]
   }
-]
-
-Do NOT include any text outside the JSON array.`;
+]`;
 
       const content = await groqChat(systemPrompt, userPrompt, 0.8);
-
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         return NextResponse.json({ error: 'Failed to parse ideas. Try again.' }, { status: 500 });
       }
-
       const ideas = safeJSONParse(jsonMatch[0]);
       return NextResponse.json({ ideas });
 
     } else if (action === 'caption') {
       const langInstruction = language === 'english'
-        ? 'Write the caption entirely in English.'
+        ? 'Write the caption in English.'
         : language === 'both'
-          ? 'Write the caption in both Arabic and English (Arabic first, then English).'
-          : 'Write the caption entirely in Arabic.';
+          ? 'Write in Arabic first then English.'
+          : 'Write the caption in Arabic.';
 
-      const userPrompt = `Write a complete social media post caption based on this idea: "${selectedIdea || topic || 'SGAS student activities'}"
+      const userPrompt = `Write a social media caption for: "${selectedIdea || topic || 'SGAS'}"
 
 Platform: ${platform || 'instagram'}
  ${langInstruction}
 
 Requirements:
-- Write an engaging, well-structured caption
-- Include a hook in the first line
-- Add relevant hashtags at the end
-- Keep it appropriate length for ${platform || 'instagram'}
-- Include a call to action (follow us, share, comment, etc.)
+- Engaging with a hook
+- Hashtags at the end
+- Call to action
+- Appropriate length for ${platform || 'instagram'}
 
-Return ONLY a valid JSON object with this exact format:
+Return ONLY valid JSON:
 {
-  "caption": "the full caption text here with line breaks",
-  "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
+  "caption": "full caption text",
+  "hashtags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "suggestedTime": "best time to post"
-}
-
-Do NOT include any text outside the JSON object.`;
+}`;
 
       const content = await groqChat(systemPrompt, userPrompt, 0.7);
-
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         return NextResponse.json({ error: 'Failed to parse caption. Try again.' }, { status: 500 });
       }
-
       const result = safeJSONParse(jsonMatch[0]);
       return NextResponse.json(result);
 
