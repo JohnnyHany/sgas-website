@@ -43,13 +43,7 @@ const translations = {
       en: "SGAS is a student activity founded by Johnny Hany at the Faculty of Commerce, Cairo University, Department of Actuarial Science - Strive and Grow in Actuarial Science. Our primary goal is to create a supportive community for actuarial science students, helping them in their academic and professional journey through sharing educational resources and organizing diverse events and activities.",
       ar: "SGAS هو نادي طلابي تأسس بواسطة جوني هاني في كلية التجارة - جامعة القاهرة، قسم العلوم الاكتوارية. هدفنا الأساسي هو خلق مجتمع داعم لطلاب العلوم الاكتوارية، يساعدهم في رحلتهم الأكاديمية والمهنية من خلال مشاركة الموارد العلمية وتنظيم الفعاليات والأنشطة المتنوعة.",
     },
-    founderTitle: { en: "Our Founder", ar: "مؤسسنا" },
-    founderName: { en: "Johnny Hany", ar: "جوني هاني" },
-    founderRole: { en: "Founder of SGAS", ar: "مؤسس SGAS" },
-    founderDesc: {
-      en: "Johnny Hany founded SGAS (Strive and Grow in Actuarial Science) with a clear vision: to build the strongest and most supportive community for actuarial science students in Egypt. Starting from Cairo University's Faculty of Commerce, he brought together students who share a passion for actuarial science, creating a platform that provides study materials, career guidance, workshops, and networking opportunities for aspiring actuaries.",
-      ar: "أسس جوني هاني SGAS (اجتهد وانمُ في العلوم الاكتوارية) برؤية واضحة: بناء أقوى وأكثر المجتمعات دعماً لطلاب العلوم الاكتوارية في مصر. انطلاقاً من كلية التجارة بجامعة القاهرة، جمع الطلاب الذين يشتركون في نفس الشغف بالعلوم الاكتوارية، وخلق منصة توفر المواد العلمية والتوجيه المهني وورش العمل وفرص التواصل لطالبي المهنة الاكتوارية.",
-    },
+
     missionTitle: { en: "Our Mission", ar: "رسالتنا" },
     mission: {
       en: "Empowering actuarial science students to reach their full academic and professional potential by providing a collaborative learning environment that supports knowledge exchange and skill development. We believe every actuarial student deserves access to the best resources and opportunities available, and we will work diligently to bridge the gap between academic curriculum and real-world job market requirements through workshops, supplementary lectures, and career guidance programs.",
