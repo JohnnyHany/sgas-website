@@ -1,5 +1,6 @@
 "use client";
 
+import { Target, Lightbulb, Heart, TrendingUp, BookOpen, CalendarDays } from "lucide-react";
 import { useLang } from "@/components/sgas/LanguageProvider";
 import { translations } from "@/lib/i18n";
 
