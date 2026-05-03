@@ -1,6 +1,6 @@
 "use client";
 
-import { Target, Lightbulb, Heart, TrendingUp, BookOpen, CalendarDays } from "lucide-react";
+import { Target, Lightbulb, Heart, TrendingUp, BookOpen, CalendarDays, Crown } from "lucide-react";
 import { useLang } from "@/components/sgas/LanguageProvider";
 import { translations } from "@/lib/i18n";
 
@@ -42,7 +42,7 @@ export default function AboutSection() {
         </div>
 
         {/* What We Offer */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {[
             { icon: BookOpen, title: about.offer1Title, desc: about.offer1Desc, color: "brand" as const },
             { icon: CalendarDays, title: about.offer2Title, desc: about.offer2Desc, color: "red" as const },
@@ -70,6 +70,31 @@ export default function AboutSection() {
               <p className="text-sm text-gray-600 leading-relaxed">{item.desc[lang]}</p>
             </div>
           ))}
+        </div>
+
+        {/* Founder Section */}
+        <div className="relative bg-gradient-to-br from-brand-50 via-white to-red-brand-50 rounded-2xl p-8 sm:p-10 border border-brand-200/50 shadow-lg">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-shrink-0">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-brand-700 to-red-brand-600 flex items-center justify-center shadow-xl shadow-brand-700/30">
+                <Crown className="h-12 w-12 sm:h-14 sm:w-14 text-white" />
+              </div>
+            </div>
+            <div className="text-center md:text-left">
+              <span className="inline-block px-3 py-1 bg-brand-100 text-brand-700 rounded-full text-xs font-semibold mb-3">
+                {about.founderTitle[lang]}
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                {about.founderName[lang]}
+              </h3>
+              <p className="text-sm font-medium text-brand-600 mb-4">
+                {about.founderRole[lang]}
+              </p>
+              <p className="text-gray-600 leading-relaxed max-w-2xl">
+                {about.founderDesc[lang]}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
