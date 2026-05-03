@@ -17,13 +17,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://sgas-website.vercel.app"),
+  metadataBase: new URL("https://sgas.dev"),
   title: "SGAS - Strive and Grow in Actuarial Science",
   description:
-    "SGAS - Strive and Grow in Actuarial Science. The official student community for Actuarial Science students from Cairo University and Ain Shams University. Study materials, events, and career development.",
+    "SGAS - Strive and Grow in Actuarial Science. Founded by Johnny Hany at Cairo University's Faculty of Commerce. The official student community for Actuarial Science students from Cairo University and Ain Shams University. Study materials, events, and career development.",
   keywords: [
     "SGAS",
     "Strive and Grow in Actuarial Science",
+    "Johnny Hany",
     "actuarial science",
     "Cairo University",
     "Ain Shams University",
@@ -32,11 +33,12 @@ export const metadata: Metadata = {
     "علوم اكتوارية",
     "جامعة القاهرة",
     "عين شمس",
+    "جوني هاني",
     "SOA exams",
     "IFoA",
     "actuarial exams Egypt",
   ],
-  authors: [{ name: "SGAS Team", url: "https://sgas-website.vercel.app" }],
+  authors: [{ name: "Johnny Hany", url: "https://sgas.dev" }],
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },
@@ -47,17 +49,17 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "SGAS - Strive and Grow in Actuarial Science",
-    description: "SGAS - Strive and Grow in Actuarial Science. The official student community for Actuarial Science students in Egypt",
+    description: "SGAS - Strive and Grow in Actuarial Science. Founded by Johnny Hany. The official student community for Actuarial Science students in Egypt",
     type: "website",
     siteName: "SGAS",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "SGAS - Strive and Grow in Actuarial Science" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "SGAS - Strive and Grow in Actuarial Science - Founded by Johnny Hany" }],
     locale: "en_US",
     alternateLocale: "ar_EG",
   },
   twitter: {
     card: "summary",
     title: "SGAS - Strive and Grow in Actuarial Science",
-    description: "Student community for Actuarial Science students - Cairo University & Ain Shams University",
+    description: "Founded by Johnny Hany. Student community for Actuarial Science students - Cairo University & Ain Shams University",
     images: ["/og-image.png"],
   },
   robots: {
@@ -76,15 +78,38 @@ export const metadata: Metadata = {
   },
 };
 
+const founderJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Johnny Hany",
+  url: "https://sgas.dev",
+  jobTitle: "Founder",
+  worksFor: {
+    "@type": "Organization",
+    name: "SGAS",
+    alternateName: "Strive and Grow in Actuarial Science",
+  },
+  description: "Johnny Hany is the founder of SGAS (Strive and Grow in Actuarial Science), a student activity founded at Cairo University's Faculty of Commerce, Department of Actuarial Science.",
+  sameAs: [
+    "https://www.linkedin.com/in/johnny-hany",
+    "https://www.instagram.com/johnny_hany",
+  ],
+};
+
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "SGAS",
   alternateName: "Strive and Grow in Actuarial Science",
-  url: "https://sgas-website.vercel.app",
-  logo: "https://sgas-website.vercel.app/sgas-logo.png",
-  description: "SGAS is a student activity founded at Cairo University's Faculty of Commerce, Department of Actuarial Science. It provides study materials, events, workshops, and career development resources for actuarial science students.",
+  url: "https://sgas.dev",
+  logo: "https://sgas.dev/sgas-logo.png",
+  description: "SGAS is a student activity founded by Johnny Hany at Cairo University's Faculty of Commerce, Department of Actuarial Science. It provides study materials, events, workshops, and career development resources for actuarial science students.",
   foundingDate: "2024",
+  founder: {
+    "@type": "Person",
+    name: "Johnny Hany",
+    jobTitle: "Founder",
+  },
   foundingLocation: {
     "@type": "Place",
     name: "Cairo University, Faculty of Commerce, Cairo, Egypt",
@@ -99,7 +124,12 @@ const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "SGAS",
-  url: "https://sgas-website.vercel.app",
+  url: "https://sgas.dev",
+  author: {
+    "@type": "Person",
+    name: "Johnny Hany",
+    jobTitle: "Founder of SGAS",
+  },
 };
 
 export default function RootLayout({
@@ -112,6 +142,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(founderJsonLd) }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
