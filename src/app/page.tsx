@@ -4,6 +4,7 @@ import AboutSection from "@/components/sgas/AboutSection";
 import UniversitiesSection from "@/components/sgas/UniversitiesSection";
 import TeamSection from "@/components/sgas/TeamSection";
 import EventsSection from "@/components/sgas/EventsSection";
+import LibrarySection from "@/components/sgas/LibrarySection";
 import JoinSection from "@/components/sgas/JoinSection";
 import Footer from "@/components/sgas/Footer";
 
@@ -17,6 +18,7 @@ export default function Home() {
         <UniversitiesSection />
         <TeamSection />
         <EventsSection />
+        <LibrarySection />
         <JoinSection />
       </main>
       <Footer />
