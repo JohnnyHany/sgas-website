@@ -15,6 +15,7 @@ const navKeys = [
   { href: "#about", key: "about" },
   { href: "#universities", key: "universities" },
   { href: "#events", key: "events" },
+    { href: "#library", key: "library" },
   { href: "#join", key: "join" },
 ];
 
