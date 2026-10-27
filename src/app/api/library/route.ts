@@ -11,14 +11,16 @@ const ALLOWED_EXT: Record<string, 'pdf' | 'pptx'> = {
   pptx: 'pptx',
 };
 
-async function getAdminEmail(req: NextRequest): Promise<string | null> {
+async function getAdminEmail(
+  req: NextRequest
+): Promise<{ email: string | null; reason: string }> {
   const token = req.cookies.get('sgas-token')?.value;
-  if (!token) return null;
+  if (!token) return { email: null, reason: 'no-cookie' };
   const payload = await verifyToken(token);
-  if (!payload) return null;
+  if (!payload) return { email: null, reason: 'invalid-token' };
   const admins = await getAdminsData();
-  if (!admins[payload.email.toLowerCase()]) return null;
-  return payload.email.toLowerCase();
+  if (!admins[payload.email.toLowerCase()]) return { email: null, reason: 'not-in-admins-table' };
+  return { email: payload.email.toLowerCase(), reason: 'ok' };
 }
 
 function mapRow(row: any) {
@@ -59,8 +61,11 @@ export async function GET() {
 // POST: create item (admin only)
 export async function POST(req: NextRequest) {
   try {
-    const adminEmail = await getAdminEmail(req);
-    if (!adminEmail) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const auth = await getAdminEmail(req);
+    if (!auth.email) {
+      return NextResponse.json({ error: 'Unauthorized: ' + auth.reason }, { status: 401 });
+    }
+    const adminEmail = auth.email;
 
     const form = await req.formData();
     const type = String(form.get('type') || '');
