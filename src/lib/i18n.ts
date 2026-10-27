@@ -10,6 +10,7 @@ const translations = {
     universities: { en: "Universities", ar: "جامعاتنا" },
     materials: { en: "Materials", ar: "المواد العلمية" },
     events: { en: "Events", ar: "الفعاليات" },
+        library: { en: "Library", ar: "المكتبة" },
     join: { en: "Join Us", ar: "انضم لينا" },
     subtitle: { en: "Strive and Grow in Actuarial Science", ar: "اجتهد وانمُ في العلوم الاكتوارية" },
   },
@@ -280,7 +281,18 @@ const translations = {
       highlights: ["+10 Companies", "Training Opportunities", "Direct Talks", "+100 Students"],
     },
   ],
-
+  // ========== LIBRARY ==========
+  library: {
+    badge: { en: "Public Library", ar: "المكتبة العامة" },
+    title1: { en: "SGAS", ar: "مكتبة" },
+    titleHighlight: { en: "Library", ar: "SGAS" },
+    description: {
+      en: "A shared library of PDFs, presentations, articles and useful links for actuarial science students. Open to everyone.",
+      ar: "مكتبة مشتركة فيها ملفات PDF وعروض بوربوينت ومقالات وروابط مفيدة لطلاب العلوم الاكتوارية. متاحة للجميع.",
+    },
+    addNew: { en: "Add to Library", ar: "إضافة للمكتبة" },
+    empty: { en: "The library is empty for now.", ar: "المكتبة فاضية حالياً." },
+  },
   // ========== JOIN ==========
   join: {
     badge: { en: "Join Us", ar: "انضم لينا" },
