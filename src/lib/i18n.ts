@@ -342,13 +342,13 @@ const translations = {
       en: [
         "A PDF report of at most 5 pages.",
         "An Excel file with formulas that the judges can review.",
-        "A short signed declaration.",
+        "A short declaration file (members, sources, and any tool or AI use).",
         "Use only your team code on the files, not your names.",
       ],
       ar: [
         "تقرير PDF بحد أقصى 5 صفحات.",
         "ملف إكسل بمعادلات يقدر المحكّمين يراجعوها.",
-        "إقرار قصير موقّع.",
+        "ملف إقرار قصير (الأعضاء والمصادر وأي أداة أو ذكاء اصطناعي استخدمتوه).",
         "استخدموا كود الفريق بس على الملفات، من غير أسماء.",
       ],
     },
