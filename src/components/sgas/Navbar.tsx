@@ -16,6 +16,7 @@ const navKeys = [
   { href: "/#universities", key: "universities" },
   { href: "/events", key: "events" },
   { href: "/library", key: "library" },
+  { href: "/competition", key: "competition" },
   { href: "/#join", key: "join" },
 ];
 

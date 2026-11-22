@@ -47,6 +47,7 @@ export default function Footer() {
                 { href: "/#about", en: "About SGAS", ar: "عن SGAS" },
                 { href: "/#team", en: "Our Team", ar: "فريقنا" },
                 { href: "/events", en: "Events", ar: "الفعاليات" },
+                { href: "/competition", en: "SGAS Cup", ar: "كاوب المسابقة" },
                 { href: "/#join", en: "Join Us", ar: "انضم لينا" },
               ].map((link) => (
                 <li key={link.href}>

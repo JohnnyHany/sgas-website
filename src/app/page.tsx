@@ -37,6 +37,16 @@ export default function Home() {
           description={translations.library.description}
           buttonLabel={{ en: "Browse the Library", ar: "تصفح المكتبة" }}
         />
+        <SectionLinkCard
+          id="competition"
+          href="/competition"
+          bgClass="bg-gray-50"
+          badge={translations.competition.badge}
+          title1={translations.competition.title1}
+          titleHighlight={translations.competition.titleHighlight}
+          description={translations.competition.description}
+          buttonLabel={translations.competition.buttonLabel}
+        />
         <JoinSection />
       </main>
       <Footer />
