@@ -4,7 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { Trophy, Users, ScrollText, FileText, Scale, Gift, Plus, Trash2, CheckCircle2, Loader2, Clock } from "lucide-react";
 import { useLang } from "@/components/sgas/LanguageProvider";
 import { translations } from "@/lib/i18n";
-import { REGISTRATION_DEADLINE, MIN_TEAM_SIZE, MAX_TEAM_SIZE } from "@/lib/competition";
+import { SCHEDULED, REGISTRATION_OPENS_MS, REGISTRATION_DEADLINE_MS, MIN_TEAM_SIZE, MAX_TEAM_SIZE } from "@/lib/competition";
 
 const c = translations.competition;
 
@@ -18,12 +18,14 @@ function useCountdown() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  const target = new Date(REGISTRATION_DEADLINE).getTime();
-  if (now === null) return { ready: false, closed: false, d: 0, h: 0, m: 0, s: 0 };
+  if (now === null) return { ready: false, before: false, closed: false, d: 0, h: 0, m: 0, s: 0 };
+  const before = now < REGISTRATION_OPENS_MS;
+  const target = before ? REGISTRATION_OPENS_MS : REGISTRATION_DEADLINE_MS;
   const diff = Math.max(0, target - now);
   return {
     ready: true,
-    closed: diff === 0,
+    before,
+    closed: !before && diff === 0,
     d: Math.floor(diff / 86400000),
     h: Math.floor(diff / 3600000) % 24,
     m: Math.floor(diff / 60000) % 60,
@@ -64,7 +66,7 @@ export default function CompetitionSection() {
   const update = (i: number, k: keyof Member, v: string) =>
     setMembers((ms) => ms.map((m, idx) => (idx === i ? { ...m, [k]: v } : m)));
 
-  const deadlineLabel = new Date(REGISTRATION_DEADLINE).toLocaleString(lang === "ar" ? "ar-EG" : "en-GB", {
+  const deadlineLabel = new Date(cd.before ? REGISTRATION_OPENS_MS : REGISTRATION_DEADLINE_MS).toLocaleString(lang === "ar" ? "ar-EG" : "en-GB", {
     timeZone: "Africa/Cairo", dateStyle: "full", timeStyle: "short",
   });
 
@@ -106,9 +108,11 @@ export default function CompetitionSection() {
 
         {/* Deadline + countdown */}
         <div className="mt-10 bg-brand-700 text-white rounded-2xl p-6 sm:p-8 text-center shadow-lg">
-          <div className="flex items-center justify-center gap-2 text-sm font-semibold text-white/80 mb-1"><Clock className="h-4 w-4" />{c.deadlineTitle[lang]}</div>
-          <p className="text-lg sm:text-xl font-bold mb-5">{deadlineLabel}</p>
-          {closed ? (
+          <div className="flex items-center justify-center gap-2 text-sm font-semibold text-white/80 mb-1"><Clock className="h-4 w-4" />{!SCHEDULED ? c.opensTitle[lang] : cd.before ? c.opensTitle[lang] : c.deadlineTitle[lang]}</div>
+          {SCHEDULED && <p className="text-lg sm:text-xl font-bold mb-5">{deadlineLabel}</p>}
+          {!SCHEDULED ? (
+            <p className="text-2xl font-bold">{c.opensSoon[lang]}</p>
+          ) : closed ? (
             <p className="text-2xl font-bold">{c.countdownClosed[lang]}</p>
           ) : (
             <div dir="ltr" className="flex justify-center gap-3 sm:gap-4">
@@ -160,7 +164,9 @@ export default function CompetitionSection() {
         {/* Registration */}
         <div id="register" className="mt-12 bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
           <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2"><Trophy className="h-6 w-6 text-brand-700" />{c.formTitle[lang]}</h2>
-          {closed ? (
+          {cd.before ? (
+            <p className="text-lg font-semibold text-gray-700 mt-4">{c.notOpen[lang]}</p>
+          ) : closed ? (
             <p className="text-lg font-semibold text-red-600 mt-4">{c.errClosed[lang]}</p>
           ) : status === "done" ? (
             <div className="mt-4 flex items-start gap-3 text-leaf-700 bg-leaf-50 border border-leaf-100 rounded-xl p-4">
