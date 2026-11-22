@@ -43,11 +43,11 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3">
               {[
-                { href: "#home", en: "Home", ar: "الرئيسية" },
-                { href: "#about", en: "About SGAS", ar: "عن SGAS" },
-                { href: "#team", en: "Our Team", ar: "فريقنا" },
-                { href: "#events", en: "Events", ar: "الفعاليات" },
-                { href: "#join", en: "Join Us", ar: "انضم لينا" },
+                { href: "/#home", en: "Home", ar: "الرئيسية" },
+                { href: "/#about", en: "About SGAS", ar: "عن SGAS" },
+                { href: "/#team", en: "Our Team", ar: "فريقنا" },
+                { href: "/events", en: "Events", ar: "الفعاليات" },
+                { href: "/#join", en: "Join Us", ar: "انضم لينا" },
               ].map((link) => (
                 <li key={link.href}>
                   <a
