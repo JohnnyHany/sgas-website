@@ -306,8 +306,8 @@ const translations = {
     buttonLabel: { en: "Join the Competition", ar: "شارك في المسابقة" },
     aboutTitle: { en: "What is it?", ar: "إيه هي المسابقة؟" },
     aboutText: {
-      en: "Each team gets a short, realistic insurance pricing case. You work on it as a team, build your analysis in Excel, and send us a short report explaining your assumptions and your decision. You can finish it in about 6 to 8 team hours over one week. Attendance at the final event is not required to win.",
-      ar: "كل فريق هياخد حالة تسعير تأمين قصيرة وواقعية. بتشتغلوا عليها كفريق، وتعملوا التحليل على الإكسل، وتبعتولنا تقرير قصير يشرح افتراضاتكم وقراركم. تقدروا تخلصوها في حوالي 6 إلى 8 ساعات عمل للفريق على مدار أسبوع. حضور الحدث الختامي مش شرط عشان تكسبوا.",
+      en: "Each team gets a short, realistic insurance pricing case. You work on it as a team, build your analysis in Excel, and send us a short report explaining your assumptions and your decision. The case is designed to take about 6 to 8 team hours. Attendance at the final event is not required to win.",
+      ar: "كل فريق هياخد حالة تسعير تأمين قصيرة وواقعية. بتشتغلوا عليها كفريق، وتعملوا التحليل على الإكسل، وتبعتولنا تقرير قصير يشرح افتراضاتكم وقراركم. الحالة متصممة تاخد حوالي 6 إلى 8 ساعات عمل للفريق. حضور الحدث الختامي مش شرط عشان تكسبوا.",
     },
     whoTitle: { en: "Who can join?", ar: "مين يقدر يشارك؟" },
     who: {
