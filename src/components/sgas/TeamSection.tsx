@@ -115,6 +115,18 @@ const teamMembers: TeamMember[] = [
     icon: Star,
     email: "salmamahmoud7454@gmail.com",
   },
+  {
+    nameEn: "Zamzam Mohammed",
+    nameAr: "زمزم محمد",
+    roleEn: "Incoming Ain Shams Ambassador",
+    roleAr: "أمباسدور عين شمس الجديدة",
+    bioEn: "Incoming SGAS ambassador at Ain Shams University, preparing to represent SGAS, coordinate activities, and grow the community at Ain Shams.",
+    bioAr: "أمباسدور SGAS الجديدة في جامعة عين شمس، بتتحضر لتمثيل SGAS وتنسيق الأنشطة وتوسيع المجتمع في عين شمس.",
+    university: "ainshams",
+    image: "/team-zamzam.jpg",
+    icon: Star,
+    email: "zamzamm898@gmail.com",
+  },
 ];
 
 function MemberModal({ member, lang, onClose }: { member: TeamMember; lang: "en" | "ar"; onClose: () => void }) {
