@@ -11,12 +11,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 const navKeys = [
-  { href: "#home", key: "home" },
-  { href: "#about", key: "about" },
-  { href: "#universities", key: "universities" },
-  { href: "#events", key: "events" },
-    { href: "#library", key: "library" },
-  { href: "#join", key: "join" },
+  { href: "/#home", key: "home" },
+  { href: "/#about", key: "about" },
+  { href: "/#universities", key: "universities" },
+  { href: "/events", key: "events" },
+  { href: "/library", key: "library" },
+  { href: "/#join", key: "join" },
 ];
 
 function MobileMenu({
@@ -96,19 +96,20 @@ function MobileMenu({
   );
 }
 
-export default function Navbar() {
+export default function Navbar({ solid = false }: { solid?: boolean }) {
   const { lang, setLang } = useLang();
   const { isAdmin } = useAdmin();
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(solid);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      setScrolled(solid || window.scrollY > 50);
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [solid]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -130,7 +131,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             {/* Logo */}
-            <a href="#home" className="flex items-center gap-3 group">
+            <a href="/#home" className="flex items-center gap-3 group">
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden shadow-lg group-hover:shadow-brand-500/30 transition-all duration-300">
                 <Image src="/sgas-logo.png" alt="SGAS Logo" fill className="object-cover" />
               </div>
