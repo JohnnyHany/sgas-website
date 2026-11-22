@@ -26,9 +26,15 @@ export const ADMIN_NAMES: Record<string, string> = {
 };
 
 // ===== JWT Helpers =====
-const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || 'sgas-auth-secret-2026-do-not-use-in-production'
-);
+// AUTH_SECRET must be set in the environment. There is no fallback on purpose:
+// a secret that lives in the repo would let anyone forge an admin cookie.
+function getSecret(): Uint8Array {
+  const s = process.env.AUTH_SECRET;
+  if (!s || s.length < 32) {
+    throw new Error('AUTH_SECRET is missing or too short (min 32 chars)');
+  }
+  return new TextEncoder().encode(s);
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -43,12 +49,12 @@ export async function createToken(email: string, rememberMe: boolean = false): P
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime(rememberMe ? '90d' : '7d')
     .setIssuedAt()
-    .sign(SECRET);
+    .sign(getSecret());
 }
 
 export async function verifyToken(token: string): Promise<{ email: string } | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, getSecret());
     return payload as unknown as { email: string };
   } catch {
     return null;
